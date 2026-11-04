@@ -8,14 +8,16 @@ const ACTIONS = {
   password_reset: 'Parola sıfırlama', backup_download: 'Yedek indirme',
 };
 const ENTITIES = {
-  activities: 'Aktivite', expenses: 'Masraf', clients: 'Müşteri', projects: 'Proje',
-  users: 'Kullanıcı', settings: 'Ayarlar', database: 'Veritabanı',
+  activities: 'Aktivite', expenses: 'Masraf', customers: 'Müşteri', companies: 'Şirket', contacts: 'İletişim kişisi',
+  projects: 'Proje', users: 'Kullanıcı', settings: 'Ayarlar', database: 'Veritabanı', clients: 'Müşteri (eski yapı)',
 };
 const FIELDS = {
   date: 'Tarih', description: 'Açıklama', hours: 'Saat', billable: 'Faturalanabilir', rate: 'Ücret',
-  project_id: 'Proje no', user_id: 'Kullanıcı no', client_id: 'Müşteri no', category: 'Kategori', amount: 'Tutar',
-  vat_rate: 'KDV %', name: 'Ad', tax_no: 'VKN', tax_office: 'Vergi dairesi', address: 'Adres',
-  default_rate: 'Varsayılan ücret', hourly_rate: 'Saatlik ücret', withholding: 'Stopaj', active: 'Aktif',
+  project_id: 'Proje no', user_id: 'Kullanıcı no', client_id: 'Müşteri no', customer_id: 'Müşteri no', company_id: 'Şirket no',
+  category: 'Kategori', amount: 'Tutar', vat_rate: 'KDV %', name: 'Ad', tax_no: 'VKN', tax_office: 'Vergi dairesi', address: 'Adres',
+  default_rate: 'Varsayılan ücret', hourly_rate: 'Saatlik ücret', daily_rate: 'Günlük ücret', currency: 'Para birimi',
+  payment_days: 'Vade (gün)', notes: 'Notlar', email: 'E-posta', phone: 'Telefon', vat_exempt: 'KDV uygulanmaz',
+  title: 'Görev', receives_offers: 'Teklif alır', receives_invoices: 'Fatura alır', withholding: 'Stopaj', active: 'Aktif',
   username: 'Kullanıcı adı', full_name: 'Ad soyad', role: 'Rol', company_name: 'Şirket adı',
   withholding_rate: 'Stopaj oranı', expense_categories: 'Masraf kategorileri',
 };

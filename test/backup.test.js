@@ -10,7 +10,7 @@ const { dailyBackup, listBackups } = require('../src/lib/backup');
 function setup() {
   const db = new DatabaseSync(':memory:');
   migrate(db);
-  db.prepare("INSERT INTO clients (name) VALUES ('Yedeklenen Müşteri')").run();
+  db.prepare("INSERT INTO customers (name) VALUES ('Yedeklenen Müşteri')").run();
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'swise-yedek-test-'));
   return { db, dir };
 }
@@ -26,7 +26,7 @@ test('günlük yedek alınır ve aynı gün tekrar alınmaz', (t) => {
   assert.equal(dailyBackup(db, dir, 14, day).created, false);
 
   const copy = new DatabaseSync(first.file, { readOnly: true });
-  assert.equal(copy.prepare('SELECT name FROM clients').get().name, 'Yedeklenen Müşteri');
+  assert.equal(copy.prepare('SELECT name FROM customers').get().name, 'Yedeklenen Müşteri');
   copy.close();
 });
 

@@ -78,21 +78,34 @@ docs/                     Yol haritası ve kararlar
 - **Çalışan**: yalnızca kendi aktivite ve masraflarını girer/düzenler; ücret bilgilerini görmez.
   (Ayrıntılı roller ve yetkiler Faz 3'te gelecek.)
 
+## Müşteri yapısı
+
+```
+Müşteri (grup)    günlük ücret, varsayılan para birimi, ödeme vadesi
+ └─ Şirket        fatura bilgileri (unvan, VKN, vergi dairesi, adres), stopaj, KDV muafiyeti;
+    │             ücret/para birimi/vade boşsa müşteriden alınır
+    └─ Proje      isteğe bağlı kendi günlük ücreti
+İletişim kişisi   müşteri geneline veya bir şirkete bağlı; "teklif alır" / "fatura alır"
+```
+
+Yeni müşteri ilk şirketiyle birlikte oluşturulur. 1 gün = 8 saat.
+
 ## Ücret ve rapor hesapları
 
-Saatlik ücret önceliği: proje ücreti → müşteri varsayılan ücreti → kullanıcı ücreti.
-Ücret aktivite girildiği anda kayda sabitlenir; sonradan değişen ücretler geçmiş kayıtları etkilemez
-(yönetici kayıt bazında değiştirebilir).
+Günlük ücret önceliği: proje → şirket → müşteri. Para birimi: şirket → müşteri.
+Ücret ve para birimi aktivite girildiği anda kayda sabitlenir; sonradan değişen ücretler geçmiş kayıtları
+etkilemez (yönetici kayıt bazında değiştirebilir).
 
 | Kalem | Hesap |
 |---|---|
-| Hizmet bedeli | Σ faturalanabilir saat × ücret |
+| Hizmet bedeli | Σ faturalanabilir saat × günlük ücret / 8 |
 | KDV matrahı | hizmet bedeli + müşteriye yansıtılan masraflar |
-| KDV | matrah × KDV oranı (Ayarlar, varsayılan %20) |
-| Stopaj | hizmet bedeli × stopaj oranı — yalnızca "Stopaj keser" işaretli müşterilerde |
+| KDV | matrah × KDV oranı (Ayarlar, varsayılan %20); "KDV uygulanmaz" şirketlerde 0 |
+| Stopaj | hizmet bedeli × stopaj oranı — yalnızca "Stopaj keser" işaretli şirketlerde |
 | Fatura toplamı | matrah + KDV |
 | Net tahsilat | fatura toplamı − stopaj |
 | İndirilecek KDV | masrafların kendi KDV tutarları |
 
+TL, EUR ve USD tutarları birbirine eklenmez; rapor her para birimini ayrı toplar (kur çevirisi Faz 5'te).
 Rapor ekranından **Excel indir** (Özet, Kullanıcı Eforu, Aktiviteler, Masraflar sayfaları) veya
 **Yazdır / PDF** (tarayıcının "PDF olarak kaydet" seçeneği) ile dışa aktarılır.

@@ -5,7 +5,7 @@ const config = require('./config');
 const { HttpError } = require('./lib/http');
 const { securityHeaders, sameOrigin } = require('./lib/security');
 
-const MODULES = ['auth', 'settings', 'users', 'clients', 'activities', 'expenses', 'reports', 'audit', 'backup'];
+const MODULES = ['auth', 'settings', 'users', 'customers', 'activities', 'expenses', 'reports', 'audit', 'backup'];
 
 function createApp() {
   const app = express();

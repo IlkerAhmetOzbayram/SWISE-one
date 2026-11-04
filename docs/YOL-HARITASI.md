@@ -14,13 +14,18 @@ Her faz ayrı bir dalda (`faz-N/...`) geliştirilir, test edilir, onaylandıktan
 | Kurumsal mail | Microsoft 365 |
 | Bordro | Muhasebeciden alınıyor; uygulama hesaplamaz, tutarları kaydeder |
 | Ücret | Müşteri ücreti günlük girilir; 1 gün = 8 saat |
+| Müşteri yapısı | Müşteri (grup) → Şirket (fatura birimi) → Proje. Ücret önceliği proje → şirket → müşteri |
+| Fatura bilgileri | Şirkette tutulur (her şirket ayrı tüzel kişi) |
+| Para birimi seviyesi | Müşteride varsayılan, şirkette değiştirilebilir |
+| İletişim kişileri | Müşteri geneline veya belirli bir şirkete bağlanabilir |
+| Rapor dökümü | Müşteri → Şirket → Proje; para birimleri ayrı toplanır |
 
 ## Fazlar
 
 | Faz | Kapsam | Durum |
 |---|---|---|
 | 0 | Altyapı: modüler yapı, veritabanı geçişleri, işlem kaydı, otomatik yedek, bulut güvenliği, testler | ✅ Tamamlandı (04.11.2026) |
-| 1 | Müşteri kaydı: fatura bilgileri, iletişim kişileri, günlük ücret (8 saat), para birimi, ödeme vadesi | ⏳ |
+| 1 | Müşteri yapısı: müşteri → şirket → proje, fatura bilgileri, iletişim kişileri, günlük ücret (8 saat), para birimi, ödeme vadesi, KDV muafiyeti | ✅ Tamamlandı — onay bekliyor |
 | 2 | Aktivite ve raporlama: günlük/haftalık/aylık görünüm, Excel, mail ile paylaşım, müşteri filtresi, aylık bütçe tahmini ve plan | ⏳ |
 | 3 | Personel, yönetim, yetkilendirme: personel kartı, roller, yetki matrisi, KVKK | ⏳ |
 | 4 | Teklif: şablon, hazırlama, PDF, e-imza (token/mobil), mail ile gönderim, arşiv, durum takibi | ⏳ |

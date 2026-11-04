@@ -1,4 +1,4 @@
-import { state, $, main, esc, money, yesNo } from '../core.js';
+import { state, $, main, esc, yesNo } from '../core.js';
 import { adminCrud } from '../components/admin-crud.js';
 
 export function pageUsers() {
@@ -11,7 +11,6 @@ export function pageUsers() {
       <label>Kullanıcı adı<input name="username" autocomplete="off" required></label>
       <label>Parola<input type="password" name="password" autocomplete="new-password" minlength="6"></label>
       <label>Rol<select name="role"><option value="user">Çalışan</option><option value="admin">Yönetici</option></select></label>
-      <label>Saatlik ücret (₺)<input name="hourly_rate" inputmode="decimal"></label>
       <label class="check"><input type="checkbox" name="active"> Aktif</label>`,
     defaults: (f) => {
       f.elements.namedItem('active').checked = true;
@@ -28,7 +27,6 @@ export function pageUsers() {
     columns: [
       { h: 'Ad soyad', v: (r) => `${esc(r.full_name)}<div class="small">${esc(r.username)}</div>` },
       { h: 'Rol', v: (r) => (r.role === 'admin' ? 'Yönetici' : 'Çalışan') },
-      { h: 'Ücret', cls: 'num', v: (r) => money(r.hourly_rate) },
       { h: 'Durum', v: (r) => yesNo(r.active, 'Aktif', 'Pasif') },
     ],
   });

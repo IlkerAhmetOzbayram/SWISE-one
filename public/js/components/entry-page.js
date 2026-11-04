@@ -36,6 +36,7 @@ export function entryPage(cfg) {
     field('_id').value = '';
     cfg.defaults(form);
     if (keepContext && keep.date) { field('date').value = keep.date; field('project_id').value = keep.project_id; }
+    cfg.afterReset?.(form);
     title.textContent = cfg.newTitle;
     cancel.hidden = true;
   }
@@ -87,6 +88,7 @@ export function entryPage(cfg) {
     }
   };
 
+  cfg.bind?.(form);
   bindFilterBar(main, load);
   reset(false);
   load();

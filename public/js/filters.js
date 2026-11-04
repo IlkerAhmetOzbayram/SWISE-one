@@ -1,13 +1,19 @@
 // Dönem filtresi (sayfalar arasında ortak)
-import { state, $, iso, today, opt, projectOptions } from './core.js';
+import { state, $, iso, today, opt, projectOptions, companyLabel } from './core.js';
 
 export const filters = {
   from: iso(new Date(new Date().getFullYear(), new Date().getMonth(), 1)),
   to: today(),
   user_id: '',
-  client_id: '',
+  customer_id: '',
+  company_id: '',
   project_id: '',
 };
+
+// Seçili müşterinin şirketleri (müşteri seçilmemişse hepsi)
+const companyFilterOptions = () => state.companies
+  .filter((c) => !filters.customer_id || String(c.customer_id) === String(filters.customer_id))
+  .map((c) => opt(c.id, companyLabel(c.customer_name, c.name), filters.company_id)).join('');
 
 function presetRange(key) {
   const d = new Date();
@@ -30,7 +36,8 @@ export function filterBar({ user = false, clients = true, extra = '' } = {}) {
       <option value="thisQuarter">Bu çeyrek</option><option value="thisYear">Bu yıl</option><option value="all">Tümü</option>
     </select></label>
     ${user ? `<label>Kullanıcı<select data-f="user_id"><option value="">Tümü</option>${state.users.map((u) => opt(u.id, u.full_name, filters.user_id)).join('')}</select></label>` : ''}
-    ${clients ? `<label>Müşteri<select data-f="client_id"><option value="">Tümü</option>${state.clients.map((c) => opt(c.id, c.name, filters.client_id)).join('')}</select></label>
+    ${clients ? `<label>Müşteri<select data-f="customer_id"><option value="">Tümü</option>${state.customers.map((c) => opt(c.id, c.name, filters.customer_id)).join('')}</select></label>
+    <label>Şirket<select data-f="company_id"><option value="">Tümü</option>${companyFilterOptions()}</select></label>
     <label>Proje<select data-f="project_id"><option value="">Tümü</option>${projectOptions(filters.project_id, { all: true })}</select></label>` : ''}
     <div class="spacer"></div>${extra}
   </div>`;
@@ -38,7 +45,17 @@ export function filterBar({ user = false, clients = true, extra = '' } = {}) {
 
 export function bindFilterBar(root, onChange) {
   root.querySelectorAll('[data-f]').forEach((el) => {
-    el.onchange = () => { filters[el.dataset.f] = el.value; onChange(); };
+    el.onchange = () => {
+      filters[el.dataset.f] = el.value;
+      // Müşteri değişince şirket listesi daraltılır, uyumsuz şirket seçimi temizlenir
+      if (el.dataset.f === 'customer_id') {
+        const company = state.companies.find((c) => String(c.id) === String(filters.company_id));
+        if (company && filters.customer_id && String(company.customer_id) !== String(filters.customer_id)) filters.company_id = '';
+        const sel = $('[data-f="company_id"]', root);
+        if (sel) sel.innerHTML = `<option value="">Tümü</option>${companyFilterOptions()}`;
+      }
+      onChange();
+    };
   });
   const preset = $('[data-preset]', root);
   preset.onchange = () => {

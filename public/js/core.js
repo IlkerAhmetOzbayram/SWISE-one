@@ -1,13 +1,24 @@
 // Ortak durum ve yardımcılar
 
-export const state = { user: null, settings: {}, clients: [], projects: [], users: [] };
+export const state = { user: null, settings: {}, customers: [], companies: [], projects: [], users: [] };
 export const isAdmin = () => state.user?.role === 'admin';
 export const $ = (sel, root = document) => root.querySelector(sel);
 export const main = $('#main');
 
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const moneyFmt = new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' });
-export const money = (n) => moneyFmt.format(n || 0);
+export const CURRENCIES = ['TRY', 'EUR', 'USD'];
+export const CURRENCY_LABELS = { TRY: 'TL (₺)', EUR: 'Euro (€)', USD: 'Dolar ($)' };
+const moneyFmts = {};
+export const money = (n, currency = 'TRY') => {
+  moneyFmts[currency] ??= new Intl.NumberFormat('tr-TR', { style: 'currency', currency });
+  return moneyFmts[currency].format(n || 0);
+};
+// { TRY: 100, EUR: 5 } → "₺100,00 · €5,00"
+export const moneyByCurrency = (map) => {
+  const parts = CURRENCIES.filter((c) => map[c]).map((c) => money(map[c], c));
+  return parts.length ? parts.join(' · ') : '—';
+};
+export const HOURS_PER_DAY = 8;
 export const hrs = (n) => (n || 0).toLocaleString('tr-TR', { maximumFractionDigits: 2 });
 export const pct = (n) => (n || 0).toLocaleString('tr-TR', { style: 'percent', maximumFractionDigits: 0 });
 const pad = (n) => String(n).padStart(2, '0');
@@ -70,27 +81,39 @@ export function fillForm(form, data) {
 }
 
 export async function loadRefs() {
-  [state.settings, state.clients, state.projects, state.users] = await Promise.all([
-    api('GET', '/api/settings'), api('GET', '/api/clients'), api('GET', '/api/projects'), api('GET', '/api/users'),
+  [state.settings, state.customers, state.companies, state.projects, state.users] = await Promise.all([
+    api('GET', '/api/settings'), api('GET', '/api/customers'), api('GET', '/api/companies'),
+    api('GET', '/api/projects'), api('GET', '/api/users'),
   ]);
 }
+
+export const currencyOptions = (selected, { inherit } = {}) =>
+  (inherit ? opt('', `Müşteriden (${inherit})`, selected ?? '') : '') + CURRENCIES.map((c) => opt(c, CURRENCY_LABELS[c], selected)).join('');
+
+// "Müşteri › Şirket" (tek şirketli müşteride şirket adı aynıysa yalnızca müşteri adı)
+export const companyLabel = (customerName, companyName) =>
+  (customerName === companyName ? customerName : `${customerName} › ${companyName}`);
 
 export const LOGO_HTML = `<img src="swise-mark.png" alt="">
   <span class="wordmark"><b>SWISE</b><small>Teknoloji ve Danışmanlık</small></span>`;
 
-// Proje seçimi: müşteriye göre gruplu, yalnızca aktifler (+ düzenlenen kaydın projesi)
+// Proje seçimi: "Müşteri › Şirket" gruplu, yalnızca kullanılabilirler (+ düzenlenen kaydın projesi)
 export function projectOptions(selected, { all = false } = {}) {
   const groups = new Map();
   for (const p of state.projects) {
-    if (!all && !p.active && String(p.id) !== String(selected)) continue;
-    if (!groups.has(p.client_name)) groups.set(p.client_name, []);
-    groups.get(p.client_name).push(p);
+    if (!all && !p.usable && String(p.id) !== String(selected)) continue;
+    const label = companyLabel(p.customer_name, p.company_name);
+    if (!groups.has(label)) groups.set(label, []);
+    groups.get(label).push(p);
   }
-  return [...groups].map(([client, ps]) =>
-    `<optgroup label="${esc(client)}">${ps.map((p) => opt(p.id, p.name + (p.active ? '' : ' (pasif)'), selected)).join('')}</optgroup>`).join('');
+  return [...groups].map(([label, ps]) =>
+    `<optgroup label="${esc(label)}">${ps.map((p) => opt(p.id, p.name + (p.usable ? '' : ' (pasif)'), selected)).join('')}</optgroup>`).join('');
 }
+
+export const projectById = (id) => state.projects.find((p) => String(p.id) === String(id));
 
 export const userOptions = (selected) => state.users.filter((u) => u.active !== 0).map((u) => opt(u.id, u.full_name, selected)).join('');
 
-export const clientProjectCell = (r) => `${esc(r.client_name)}<div class="small">${esc(r.project_name)}</div>`;
+export const clientProjectCell = (r) =>
+  `${esc(companyLabel(r.customer_name, r.company_name))}<div class="small">${esc(r.project_name)}</div>`;
 export const yesNo = (v, yes = 'Evet', no = 'Hayır') => `<span class="badge${v ? '' : ' off'}">${v ? yes : no}</span>`;

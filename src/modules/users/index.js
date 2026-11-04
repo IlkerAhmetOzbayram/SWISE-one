@@ -2,7 +2,7 @@
 const express = require('express');
 const { all, run, tx } = require('../../db');
 const { bad } = require('../../lib/http');
-const { str, num, flag } = require('../../lib/validate');
+const { str, flag } = require('../../lib/validate');
 const { auth, admin, isAdmin, hashPassword } = require('../../lib/auth');
 const { checkPassword } = require('../auth');
 const audit = require('../../lib/audit');
@@ -10,21 +10,21 @@ const audit = require('../../lib/audit');
 const router = express.Router();
 
 router.get('/api/users', auth, (req, res) => {
-  const cols = isAdmin(req) ? 'id, username, full_name, role, hourly_rate, active' : 'id, full_name';
+  const cols = isAdmin(req) ? 'id, username, full_name, role, active' : 'id, full_name';
   res.json(all(`SELECT ${cols} FROM users ORDER BY full_name`));
 });
 
+// Not: users.hourly_rate artık müşteri ücretinde kullanılmıyor; Faz 3'te personel maliyetine dönüşecek
 function userFields(b) {
   const role = b.role === 'admin' ? 'admin' : 'user';
-  return [str(b.username, 'Kullanıcı adı').toLowerCase(), str(b.full_name, 'Ad soyad'), role,
-    num(b.hourly_rate, 'Saatlik ücret', { required: false }) ?? 0];
+  return [str(b.username, 'Kullanıcı adı').toLowerCase(), str(b.full_name, 'Ad soyad'), role];
 }
 
 router.post('/api/users', auth, admin, (req, res) => {
   const pw = checkPassword(str(req.body.password, 'Parola'));
   const id = tx(() => {
     const { lastInsertRowid } = run(
-      'INSERT INTO users (username, full_name, role, hourly_rate, password_hash) VALUES (?, ?, ?, ?, ?)',
+      'INSERT INTO users (username, full_name, role, password_hash) VALUES (?, ?, ?, ?)',
       ...userFields(req.body), hashPassword(pw));
     audit.logCreate(req, 'users', Number(lastInsertRowid));
     return Number(lastInsertRowid);
@@ -39,7 +39,7 @@ router.put('/api/users/:id', auth, admin, (req, res) => {
   const active = req.body.active === undefined ? 1 : flag(req.body.active);
   if (id === req.user.id && (!active || req.body.role !== 'admin')) bad('Kendi yönetici hesabınızı pasifleştiremez veya yetkisini düşüremezsiniz');
   tx(() => {
-    run('UPDATE users SET username = ?, full_name = ?, role = ?, hourly_rate = ?, active = ? WHERE id = ?',
+    run('UPDATE users SET username = ?, full_name = ?, role = ?, active = ? WHERE id = ?',
       ...userFields(req.body), active, id);
     audit.logUpdate(req, 'users', before);
     if (req.body.password) {
