@@ -16,6 +16,16 @@ npm start
 
 Tarayıcıda http://localhost:3000 adresini açın. İlk açılışta şirket adı ve yönetici hesabı oluşturulur.
 
+Geliştirme sırasında girişsiz çalışmak için:
+
+```bash
+npm run gelistirme
+```
+
+Bu modda yalnızca bu bilgisayardan (localhost) gelen istekler giriş istenmeden ilk yönetici olarak kabul edilir;
+hiç yönetici yoksa "Yerel Yönetici" oluşturulur. Başka cihazlardan erişimde giriş yine zorunludur ve
+`NODE_ENV=production` iken bu mod hiçbir şekilde açılmaz.
+
 ```bash
 npm test
 ```
@@ -38,6 +48,7 @@ npm run parola-sifirla -- <kullanıcı adı>
 | `BACKUP_KEEP` | `14` | Saklanacak günlük yedek sayısı |
 | `NODE_ENV` | — | Bulutta `production`: çerez yalnızca HTTPS'te gönderilir, HSTS açılır |
 | `TRUST_PROXY` | — | Uygulama bir ters vekil (nginx, yük dengeleyici) arkasındaysa `1` |
+| `NO_LOGIN` | — | `1`: girişsiz geliştirme modu (`npm run gelistirme` ile aynı); canlıda yok sayılır |
 
 ## Veri ve yedekler
 

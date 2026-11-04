@@ -6,6 +6,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node --no-warnings server.js",
+    "gelistirme": "node --no-warnings server.js --girissiz",
     "test": "node --no-warnings --test \"test/*.test.js\"",
     "parola-sifirla": "node --no-warnings scripts/parola-sifirla.js"
   },

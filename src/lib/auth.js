@@ -31,12 +31,29 @@ const clearSessionCookie = (res) => res.setHeader('Set-Cookie', cookie('', 0));
 
 const getToken = (req) => (req.headers.cookie || '').match(/(?:^|;\s*)sid=([a-f0-9]+)/)?.[1];
 
+// İstek bu bilgisayardan mı? (Vekil başlıklarına değil, gerçek bağlantı adresine bakılır)
+const LOCAL = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
+const isLocalRequest = (req) => LOCAL.has(req.socket.remoteAddress);
+
+// Girişsiz modda kayıtlar ilk aktif yöneticinin adına girilir; yönetici yoksa "Yerel Yönetici" oluşturulur
+function devUser() {
+  const sql = `SELECT id, username, full_name, role FROM users WHERE role = 'admin' AND active = 1 ORDER BY id LIMIT 1`;
+  let user = one(sql);
+  if (!user) {
+    run(`INSERT INTO users (username, full_name, password_hash, role) VALUES ('yerel', 'Yerel Yönetici', ?, 'admin')`,
+      hashPassword(crypto.randomBytes(24).toString('hex')));
+    user = one(sql);
+  }
+  return { ...user, no_login: true };
+}
+
 function auth(req, res, next) {
   const token = getToken(req);
-  const user = token && one(
+  let user = token && one(
     `SELECT u.id, u.username, u.full_name, u.role FROM sessions s
      JOIN users u ON u.id = s.user_id
      WHERE s.token = ? AND s.expires_at > ? AND u.active = 1`, token, Date.now());
+  if (!user && config.noLogin && isLocalRequest(req)) user = devUser();
   if (!user) return res.status(401).json({ error: 'Lütfen giriş yapın' });
   req.user = user;
   next();
@@ -47,4 +64,4 @@ const admin = (req, res, next) =>
 
 const isAdmin = (req) => req.user.role === 'admin';
 
-module.exports = { hashPassword, verifyPassword, startSession, clearSessionCookie, getToken, auth, admin, isAdmin };
+module.exports = { hashPassword, verifyPassword, startSession, clearSessionCookie, getToken, auth, admin, isAdmin, isLocalRequest };

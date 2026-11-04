@@ -41,6 +41,9 @@ async function boot() {
   await loadRefs();
   $('#topbar').hidden = false;
   $('#meName').textContent = `${state.user.full_name}${isAdmin() ? ' · Yönetici' : ''}`;
+  // Girişsiz geliştirme modunda çıkış anlamsız; uyarı gösterilir
+  $('#logoutBtn').hidden = !!state.user.no_login;
+  $('#devBanner').hidden = !state.user.no_login;
   route();
 }
 

@@ -46,6 +46,7 @@ nav a:hover { background: var(--bg); color: var(--text); }
 nav a.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
 .me { display: flex; gap: 12px; align-items: center; color: var(--muted); white-space: nowrap; }
 
+.dev-banner { background: #fff4d6; color: #7a5600; border-bottom: 1px solid #f0d99a; padding: 6px 24px; font-size: 13px; text-align: center; }
 main { max-width: 1240px; margin: 0 auto; padding: 24px; }
 h1 { font-size: 22px; margin: 0 0 16px; }
 h2 { font-size: 16px; margin: 0 0 14px; }
@@ -139,7 +140,7 @@ tr.warn td { background: #fff8f6; }
 @media print {
   @page { size: A4 landscape; margin: 12mm; }
   body { background: #fff; font-size: 11px; }
-  header#topbar, .no-print, #toast { display: none !important; }
+  header#topbar, .no-print, #toast, .dev-banner { display: none !important; }
   main { padding: 0; max-width: none; }
   .card, .stat { border: none; padding: 0; margin-bottom: 14px; break-inside: avoid; }
   .print-only { display: block; }
