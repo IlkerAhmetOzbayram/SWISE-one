@@ -1,4 +1,4 @@
-// Efor ekranı: günlük liste, haftalık çizelge (hücreden giriş) ve aylık takvim.
+// Aktivite Listesi ekranı: günlük liste, haftalık çizelge (hücreden giriş) ve aylık takvim.
 // Rota: #/efor/gun | #/efor/hafta | #/efor/ay
 import { state, isAdmin, $, main, api, toast, esc, hrs, today, fmtDate, addDays, weekStart, dayShort, dayName, isWeekend,
   monthLabel, addMonths, monthEnd, opt, clientProjectCell, companyLabel, yesNo, HOURS_PER_DAY } from '../core.js';
@@ -24,7 +24,7 @@ export function pageEffort(param) {
   const teamMode = isAdmin() && view.userId === '';
   const range = rangeOf(v, view.date);
 
-  main.innerHTML = `<h1>Efor</h1>
+  main.innerHTML = `<h1>Aktivite Listesi</h1>
     <section class="card">
       <div class="toolbar">
         <div class="tabs">${Object.entries(VIEWS).map(([k, t]) => `<a href="#/efor/${k}" class="${k === v ? 'active' : ''}">${t}</a>`).join('')}</div>

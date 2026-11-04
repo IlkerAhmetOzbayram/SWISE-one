@@ -1,4 +1,4 @@
-// Bir günün eforunu görme/ekleme/düzenleme penceresi (Efor ekranı ve ana sayfa kullanır)
+// Bir günün aktivitelerini görme/ekleme/düzenleme penceresi (Aktivite Listesi ve ana sayfa kullanır)
 import { state, isAdmin, api, toast, esc, hrs, fmtDate, dayName, formToObj, parseHours, userOptions, clientProjectCell, yesNo } from '../core.js';
 import { targetFields, setTarget, bindTarget } from './target-select.js';
 

@@ -21,7 +21,7 @@ function showRate(f) {
 
 export function pageActivities() {
   entryPage({
-    title: 'Aktiviteler',
+    title: 'Aktivite Giriş',
     newTitle: 'Yeni aktivite',
     editTitle: 'Aktiviteyi düzenle',
     endpoint: '/api/activities',

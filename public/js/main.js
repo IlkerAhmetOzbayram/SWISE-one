@@ -14,8 +14,8 @@ import { pageBudget } from './pages/budget.js';
 
 const ROUTES = [
   { id: 'ana-sayfa', title: 'Ana Sayfa', render: pageHome },
-  { id: 'efor', title: 'Efor', render: pageEffort },
-  { id: 'aktiviteler', title: 'Aktiviteler', render: pageActivities },
+  { id: 'aktiviteler', title: 'Aktivite Giriş', render: pageActivities },
+  { id: 'efor', title: 'Aktivite Listesi', render: pageEffort },
   { id: 'masraflar', title: 'Masraflar', render: pageExpenses },
   { id: 'rapor', title: 'Raporlar', admin: true, render: pageReport },
   { id: 'butce', title: 'Bütçe', admin: true, render: pageBudget },
