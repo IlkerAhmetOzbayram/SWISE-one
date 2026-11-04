@@ -6,7 +6,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node --no-warnings server.js",
-    "test": "node --no-warnings --test \"test/*.test.js\""
+    "test": "node --no-warnings --test \"test/*.test.js\"",
+    "parola-sifirla": "node --no-warnings scripts/parola-sifirla.js"
   },
   "engines": {
     "node": ">=24"

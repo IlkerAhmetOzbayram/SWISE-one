@@ -22,6 +22,12 @@ npm test
 
 Testler bellekte geçici bir veritabanıyla çalışır; gerçek veriye dokunmaz.
 
+Parolası unutulan bir hesabı sunucuda sıfırlamak için (yeni parola gizli olarak sorulur):
+
+```bash
+npm run parola-sifirla -- <kullanıcı adı>
+```
+
 ### Ortam değişkenleri
 
 | Değişken | Varsayılan | Açıklama |
