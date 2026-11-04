@@ -29,7 +29,7 @@ Her faz ayrı bir dalda (`faz-N/...`) geliştirilir, test edilir, onaylandıktan
 |---|---|---|
 | 0 | Altyapı: modüler yapı, veritabanı geçişleri, işlem kaydı, otomatik yedek, bulut güvenliği, testler | ✅ Tamamlandı (04.11.2026) |
 | 1 | Müşteri yapısı: müşteri → şirket → proje, fatura bilgileri, iletişim kişileri, günlük ücret (8 saat), para birimi, ödeme vadesi, KDV muafiyeti | ✅ Tamamlandı (04.11.2026) |
-| 2 | Aktivite ve raporlama: ana sayfa, efor ekranı (günlük/haftalık çizelge/aylık takvim), müşteri efor raporu + Excel, tatil listesi, aylık müşteri planı ve bütçe tahmini | ✅ Tamamlandı — onay bekliyor |
+| 2 | Aktivite ve raporlama: ana sayfa, efor ekranı (günlük/haftalık çizelge/aylık takvim), müşteri efor raporu + Excel, tatil listesi, aylık müşteri planı ve bütçe tahmini | ✅ Tamamlandı (04.11.2026) |
 | 3 | Personel, yönetim, yetkilendirme: personel kartı, roller, yetki matrisi, KVKK | ⏳ |
 | 4 | Teklif: şablon, hazırlama, PDF, e-imza (token/mobil), mail ile gönderim, arşiv, durum takibi | ⏳ |
 | 5 | Muhasebe: gelir/gider hareketleri, gelen/giden fatura, cari bakiye, personel cari (maaş, SGK, avans), aylık bütçe raporu | ⏳ |
