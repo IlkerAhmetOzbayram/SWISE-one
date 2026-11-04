@@ -1,0 +1,53 @@
+// Uygulama girişi: oturum kontrolü, menü ve sayfa yönlendirme
+import { state, isAdmin, $, api, loadRefs } from './core.js';
+import { showLogin, showSetup } from './pages/auth.js';
+import { pageActivities } from './pages/activities.js';
+import { pageExpenses } from './pages/expenses.js';
+import { pageReport } from './pages/report.js';
+import { pageClients } from './pages/clients.js';
+import { pageUsers } from './pages/users.js';
+import { pageSettings } from './pages/settings.js';
+import { pageAudit } from './pages/audit.js';
+
+const ROUTES = [
+  { id: 'aktiviteler', title: 'Aktiviteler', render: pageActivities },
+  { id: 'masraflar', title: 'Masraflar', render: pageExpenses },
+  { id: 'rapor', title: 'Muhasebe Raporu', admin: true, render: pageReport },
+  { id: 'musteriler', title: 'Müşteriler & Projeler', admin: true, render: pageClients },
+  { id: 'kullanicilar', title: 'Kullanıcılar', admin: true, render: pageUsers },
+  { id: 'islem-kaydi', title: 'İşlem Kaydı', admin: true, render: pageAudit },
+  { id: 'ayarlar', title: 'Ayarlar', render: pageSettings },
+];
+
+function route() {
+  if (!state.user) return;
+  const visible = ROUTES.filter((r) => !r.admin || isAdmin());
+  const id = location.hash.replace(/^#\/?/, '');
+  const current = visible.find((r) => r.id === id) || visible[0];
+  $('#nav').innerHTML = visible.map((r) => `<a href="#/${r.id}" class="${r === current ? 'active' : ''}">${r.title}</a>`).join('');
+  document.title = `${current.title} · SWISE One`;
+  current.render();
+}
+
+async function boot() {
+  try {
+    state.user = await api('GET', '/api/me');
+  } catch {
+    state.user = null;
+    const { needsSetup } = await api('GET', '/api/setup');
+    return needsSetup ? showSetup(boot) : showLogin(boot);
+  }
+  await loadRefs();
+  $('#topbar').hidden = false;
+  $('#meName').textContent = `${state.user.full_name}${isAdmin() ? ' · Yönetici' : ''}`;
+  route();
+}
+
+window.addEventListener('hashchange', route);
+$('#logoutBtn').onclick = async () => {
+  await api('POST', '/api/logout');
+  state.user = null;
+  location.hash = '';
+  boot();
+};
+boot();

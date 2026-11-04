@@ -5,7 +5,8 @@
   "description": "SWISE One: efor takibi, muhasebe ve teklif yönetimi için şirket içi uygulama",
   "main": "server.js",
   "scripts": {
-    "start": "node --no-warnings server.js"
+    "start": "node --no-warnings server.js",
+    "test": "node --no-warnings --test \"test/*.test.js\""
   },
   "engines": {
     "node": ">=24"

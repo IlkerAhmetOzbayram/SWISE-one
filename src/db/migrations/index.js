@@ -1,0 +1,6 @@
+// Geçiş listesi. Yeni şema değişikliği = yeni dosya + bu listeye ekleme.
+// Uygulanmış bir geçiş dosyası sonradan değiştirilmez.
+module.exports = [
+  require('./001-ilk-sema'),
+  require('./002-islem-kaydi'),
+];

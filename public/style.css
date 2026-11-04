@@ -87,6 +87,10 @@ tr.total td { font-weight: 700; border-top: 2px solid var(--text); }
 tr.muted td { color: var(--muted); }
 .badge { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 99px; background: var(--accent-soft); color: var(--accent); }
 .badge.off { background: #f1f2f4; color: var(--muted); }
+.badge.danger { background: #fbeaea; color: var(--danger); }
+td.details { font-size: 13px; line-height: 1.5; }
+td.details s { color: var(--muted); }
+tr.warn td { background: #fff8f6; }
 .small { color: var(--muted); font-size: 12px; font-weight: 400; }
 .empty { color: var(--muted); padding: 24px; text-align: center; }
 .hint { color: var(--muted); font-size: 13px; margin: 8px 0 0; }
