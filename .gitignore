@@ -1,0 +1,9 @@
+node_modules/
+
+# Veritabanı: ekibin kayıtları ve parola özetleri — GitHub'a gönderilmez
+data.db
+data.db-*
+*.db
+
+.env
+.claude/settings.local.json

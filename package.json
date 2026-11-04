@@ -1,0 +1,18 @@
+{
+  "name": "swise-one",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SWISE One: efor takibi, muhasebe ve teklif yönetimi için şirket içi uygulama",
+  "main": "server.js",
+  "scripts": {
+    "start": "node --no-warnings server.js"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "type": "commonjs",
+  "dependencies": {
+    "exceljs": "^4.4.0",
+    "express": "^4.22.3"
+  }
+}
