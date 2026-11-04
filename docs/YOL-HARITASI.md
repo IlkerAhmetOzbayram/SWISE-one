@@ -19,7 +19,7 @@ Her faz ayrı bir dalda (`faz-N/...`) geliştirilir, test edilir, onaylandıktan
 
 | Faz | Kapsam | Durum |
 |---|---|---|
-| 0 | Altyapı: modüler yapı, veritabanı geçişleri, işlem kaydı, otomatik yedek, bulut güvenliği, testler | ✅ Tamamlandı — onay bekliyor |
+| 0 | Altyapı: modüler yapı, veritabanı geçişleri, işlem kaydı, otomatik yedek, bulut güvenliği, testler | ✅ Tamamlandı (04.11.2026) |
 | 1 | Müşteri kaydı: fatura bilgileri, iletişim kişileri, günlük ücret (8 saat), para birimi, ödeme vadesi | ⏳ |
 | 2 | Aktivite ve raporlama: günlük/haftalık/aylık görünüm, Excel, mail ile paylaşım, müşteri filtresi, aylık bütçe tahmini ve plan | ⏳ |
 | 3 | Personel, yönetim, yetkilendirme: personel kartı, roller, yetki matrisi, KVKK | ⏳ |
