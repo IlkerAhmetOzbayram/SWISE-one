@@ -81,6 +81,7 @@ export function adminCrud(root, cfg) {
       } catch (err) { toast(err.message, true); }
     }
   };
+  cfg.bind?.(form);
   reset();
   list();
 }

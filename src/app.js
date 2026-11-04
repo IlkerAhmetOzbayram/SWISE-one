@@ -5,7 +5,8 @@ const config = require('./config');
 const { HttpError } = require('./lib/http');
 const { securityHeaders, sameOrigin } = require('./lib/security');
 
-const MODULES = ['auth', 'settings', 'users', 'customers', 'activities', 'expenses', 'reports', 'audit', 'backup'];
+const MODULES = ['auth', 'settings', 'users', 'customers', 'activities', 'expenses', 'reports', 'calendar', 'budget',
+  'dashboard', 'audit', 'backup'];
 
 function createApp() {
   const app = express();
@@ -25,6 +26,7 @@ function createApp() {
     if (err instanceof HttpError) return res.status(err.status).json({ error: err.message });
     if (err.type === 'entity.parse.failed') return res.status(400).json({ error: 'Geçersiz istek' });
     if (/UNIQUE constraint failed: users.username/.test(err.message)) return res.status(400).json({ error: 'Bu kullanıcı adı zaten var' });
+    if (/UNIQUE constraint failed: holidays.date/.test(err.message)) return res.status(400).json({ error: 'Bu tarihte zaten bir tatil kaydı var' });
     console.error(err);
     res.status(500).json({ error: 'Sunucu hatası' });
   });

@@ -10,6 +10,7 @@ const ACTIONS = {
 const ENTITIES = {
   activities: 'Aktivite', expenses: 'Masraf', customers: 'Müşteri', companies: 'Şirket', contacts: 'İletişim kişisi',
   projects: 'Proje', users: 'Kullanıcı', settings: 'Ayarlar', database: 'Veritabanı', clients: 'Müşteri (eski yapı)',
+  holidays: 'Tatil', budget_plans: 'Aylık plan',
 };
 const FIELDS = {
   date: 'Tarih', description: 'Açıklama', hours: 'Saat', billable: 'Faturalanabilir', rate: 'Ücret',
@@ -18,6 +19,7 @@ const FIELDS = {
   default_rate: 'Varsayılan ücret', hourly_rate: 'Saatlik ücret', daily_rate: 'Günlük ücret', currency: 'Para birimi',
   payment_days: 'Vade (gün)', notes: 'Notlar', email: 'E-posta', phone: 'Telefon', vat_exempt: 'KDV uygulanmaz',
   title: 'Görev', receives_offers: 'Teklif alır', receives_invoices: 'Fatura alır', withholding: 'Stopaj', active: 'Aktif',
+  planned_days: 'Planlanan adam-gün', month: 'Ay', kind: 'Tür',
   username: 'Kullanıcı adı', full_name: 'Ad soyad', role: 'Rol', company_name: 'Şirket adı',
   withholding_rate: 'Stopaj oranı', expense_categories: 'Masraf kategorileri',
 };

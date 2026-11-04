@@ -2,8 +2,9 @@
 
 SWISE Teknoloji ve Danışmanlık'ın şirket içi iş uygulaması (küçük ERP).
 
-Mevcut modüller: aktivite girişi ve efor takibi, masraf takibi, müşteri/proje yönetimi, muhasebe raporu,
-işlem kaydı, yedekleme. Planlanan modüller ve kararlar: [docs/YOL-HARITASI.md](docs/YOL-HARITASI.md).
+Mevcut modüller: ana sayfa (gösterge), efor (günlük/haftalık/aylık), aktivite ve masraf girişi, müşteri yapısı,
+muhasebe raporu, müşteri efor raporu, aylık bütçe (plan/gerçekleşen/tahmin), tatil listesi, işlem kaydı, yedekleme.
+Planlanan modüller ve kararlar: [docs/YOL-HARITASI.md](docs/YOL-HARITASI.md).
 
 ## Çalıştırma
 
@@ -109,6 +110,13 @@ Yeni müşteri ilk şirketiyle birlikte oluşturulur. 1 gün = 8 saat.
 Aktivite ve masraflar müşteri/şirkete girilir; proje seçmek isteğe bağlıdır. Tek şirketli müşteride şirket
 seçimi gösterilmez. Kaydı giren kullanıcı otomatik yazılır; yalnızca yönetici değiştirebilir.
 VKN / TCKN en fazla 11 karakterdir (rakam ve harf).
+
+## Bütçe ve iş günleri
+
+- İş günü: Pazartesi–Cuma; Ayarlar → Tatiller listesindeki günler düşülür (yarım gün = 0,5).
+- Aylık plan müşteri bazında adam-gün olarak girilir (isteğe bağlı şirket/proje kırılımı);
+  plan tutarı = adam-gün × geçerli günlük ücret.
+- Tahmin = faturalanabilir gerçekleşen ÷ geçen iş günü × ayın iş günü.
 
 ## Ücret ve rapor hesapları
 

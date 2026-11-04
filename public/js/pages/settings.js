@@ -1,4 +1,5 @@
-import { state, isAdmin, $, main, api, toast, esc, formToObj, loadRefs, fmtDateTime, fmtBytes } from '../core.js';
+import { state, isAdmin, $, main, api, toast, esc, formToObj, loadRefs, fmtDate, fmtDateTime, fmtBytes, dayName } from '../core.js';
+import { adminCrud } from '../components/admin-crud.js';
 
 export function pageSettings() {
   const s = state.settings;
@@ -11,6 +12,7 @@ export function pageSettings() {
         <label class="full">Masraf kategorileri (virgülle ayırın)<input name="expense_categories" value="${esc(s.expense_categories)}" required></label>
         <div class="actions"><button type="submit">Kaydet</button></div>
       </form></section>
+    <div data-holidays></div>
     <section class="card"><h2>Yedekler</h2>
       <p class="hint" style="margin:0 0 12px">Veritabanının yedeği her gün otomatik alınır. Anlık bir kopyayı bilgisayarınıza da indirebilirsiniz.</p>
       <div data-backups></div>
@@ -37,6 +39,7 @@ export function pageSettings() {
     };
     $('[data-backup-download]').onclick = () => { location.href = '/api/admin/backup.db'; };
     loadBackups();
+    loadHolidays();
   }
 
   const pwForm = $('[data-password]');
@@ -48,6 +51,36 @@ export function pageSettings() {
       toast('Parola güncellendi');
     } catch (err) { toast(err.message, true); }
   };
+}
+
+// Resmi tatiller ve şirket izinleri (iş günü ve bütçe tahmini hesabında düşülür)
+let holidayYear = new Date().getFullYear();
+
+async function loadHolidays() {
+  let rows;
+  try {
+    rows = await api('GET', `/api/holidays?year=${holidayYear}`);
+  } catch (err) { return toast(err.message, true); }
+  const root = $('[data-holidays]');
+  adminCrud(root, {
+    compact: true, deletable: true,
+    listTitle: `Tatiller ve izin günleri · ${holidayYear}`, newTitle: 'Yeni tatil', editTitle: 'Tatili düzenle', addLabel: 'Tatil ekle',
+    intro: `İş günü hesabında düşülür. Dini bayram tarihlerini Diyanet takvimiyle kontrol edin.
+      <button type="button" class="link" data-year="-1">← ${holidayYear - 1}</button> <button type="button" class="link" data-year="1">${holidayYear + 1} →</button>`,
+    emptyText: 'Bu yıl için kayıt yok.', endpoint: '/api/holidays', rows: () => rows, onSaved: loadHolidays,
+    fields: () => `
+      <label>Tarih<input type="date" name="date" required></label>
+      <label class="wide">Açıklama<input name="name" placeholder="Örn. Şirket izni" required></label>
+      <label>Tür<select name="kind"><option value="full">Tam gün</option><option value="half">Yarım gün</option></select></label>`,
+    columns: [
+      { h: 'Tarih', v: (r) => `${fmtDate(r.date)} <span class="small">${dayName(r.date)}</span>` },
+      { h: 'Açıklama', v: (r) => esc(r.name) },
+      { h: 'Tür', v: (r) => (r.kind === 'half' ? '<span class="badge">Yarım gün</span>' : 'Tam gün') },
+    ],
+  });
+  root.querySelectorAll('[data-year]').forEach((b) => {
+    b.onclick = () => { holidayYear += Number(b.dataset.year); loadHolidays(); };
+  });
 }
 
 async function loadBackups() {

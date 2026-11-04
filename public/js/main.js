@@ -8,11 +8,17 @@ import { pageCustomers } from './pages/customers.js';
 import { pageUsers } from './pages/users.js';
 import { pageSettings } from './pages/settings.js';
 import { pageAudit } from './pages/audit.js';
+import { pageHome } from './pages/home.js';
+import { pageEffort } from './pages/effort.js';
+import { pageBudget } from './pages/budget.js';
 
 const ROUTES = [
+  { id: 'ana-sayfa', title: 'Ana Sayfa', render: pageHome },
+  { id: 'efor', title: 'Efor', render: pageEffort },
   { id: 'aktiviteler', title: 'Aktiviteler', render: pageActivities },
   { id: 'masraflar', title: 'Masraflar', render: pageExpenses },
-  { id: 'rapor', title: 'Muhasebe Raporu', admin: true, render: pageReport },
+  { id: 'rapor', title: 'Raporlar', admin: true, render: pageReport },
+  { id: 'butce', title: 'Bütçe', admin: true, render: pageBudget },
   { id: 'musteriler', title: 'Müşteriler', admin: true, render: pageCustomers },
   { id: 'kullanicilar', title: 'Kullanıcılar', admin: true, render: pageUsers },
   { id: 'islem-kaydi', title: 'İşlem Kaydı', admin: true, render: pageAudit },

@@ -24,6 +24,17 @@ export const pct = (n) => (n || 0).toLocaleString('tr-TR', { style: 'percent', m
 const pad = (n) => String(n).padStart(2, '0');
 export const iso = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 export const today = () => iso(new Date());
+export const parseDay = (s) => new Date(`${s}T00:00:00`);
+export const addDays = (s, n) => { const d = parseDay(s); d.setDate(d.getDate() + n); return iso(d); };
+export const weekStart = (s) => addDays(s, -((parseDay(s).getDay() + 6) % 7)); // Pazartesi
+export const DAY_NAMES = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+export const DAY_SHORT = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
+export const dayName = (s) => DAY_NAMES[parseDay(s).getDay()];
+export const dayShort = (s) => DAY_SHORT[parseDay(s).getDay()];
+export const isWeekend = (s) => [0, 6].includes(parseDay(s).getDay());
+export const monthLabel = (m) => parseDay(`${m}-01`).toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
+export const addMonths = (m, n) => { const d = parseDay(`${m}-01`); d.setMonth(d.getMonth() + n); return iso(d).slice(0, 7); };
+export const monthEnd = (m) => { const d = parseDay(`${m}-01`); d.setMonth(d.getMonth() + 1, 0); return iso(d); };
 export const fmtDate = (s) => (s ? s.split('-').reverse().join('.') : '');
 export const fmtDateTime = (s) => (s ? new Date(s).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' }) : '');
 export const fmtBytes = (n) => (n >= 1048576 ? `${(n / 1048576).toLocaleString('tr-TR', { maximumFractionDigits: 1 })} MB` : `${Math.ceil(n / 1024)} KB`);
