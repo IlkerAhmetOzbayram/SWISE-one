@@ -50,7 +50,7 @@ function buildReport(req) {
     const co = cu.companies.get(row.company_id);
     const key = `${row.project_id}|${currency}`;
     if (!co.projects.has(key)) {
-      co.projects.set(key, { id: row.project_id, name: row.project_name, currency, hours: 0, billable_hours: 0, fee: 0, expenses: 0 });
+      co.projects.set(key, { id: row.project_id, name: row.project_name ?? 'Proje dışı', currency, hours: 0, billable_hours: 0, fee: 0, expenses: 0 });
     }
     return co.projects.get(key);
   };

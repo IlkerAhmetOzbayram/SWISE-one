@@ -85,7 +85,7 @@ async function writeReportXlsx(rep, res) {
     { header: 'Para Birimi', width: 11 }, { header: 'Tutar', fmt: MONEY, width: 16 },
   ]);
   for (const a of rep.activities) {
-    acts.addRow([a.date, a.user_name, a.customer_name, a.company_name, a.project_name, a.description, a.hours,
+    acts.addRow([a.date, a.user_name, a.customer_name, a.company_name, a.project_name ?? '', a.description, a.hours,
       a.billable ? 'Evet' : 'Hayır', a.daily_rate, a.currency, a.billable ? r2(a.hours * a.daily_rate / HOURS_PER_DAY) : 0]);
   }
 
@@ -96,7 +96,7 @@ async function writeReportXlsx(rep, res) {
     { header: 'Para Birimi', width: 11 }, { header: 'KDV %', width: 8 }, { header: 'KDV', fmt: MONEY }, { header: 'Yansıtılır', width: 10 },
   ]);
   for (const e of rep.expenses) {
-    exps.addRow([e.date, e.user_name, e.customer_name, e.company_name, e.project_name, e.category, e.description,
+    exps.addRow([e.date, e.user_name, e.customer_name, e.company_name, e.project_name ?? '', e.category, e.description,
       e.amount, e.currency, e.vat_rate, r2(e.amount * e.vat_rate / 100), e.billable ? 'Evet' : 'Hayır']);
   }
 

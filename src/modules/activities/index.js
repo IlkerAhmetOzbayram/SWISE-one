@@ -1,10 +1,10 @@
-// Aktivite (efor) girişi. Tutar = saat × günlük ücret / 8
+// Aktivite (efor) girişi. Kayıt şirkete bağlıdır, proje isteğe bağlıdır. Tutar = saat × günlük ücret / 8
 const express = require('express');
 const { all, run, tx } = require('../../db');
 const { bad } = require('../../lib/http');
 const { str, num, date, flag } = require('../../lib/validate');
 const { auth, isAdmin } = require('../../lib/auth');
-const { buildFilter, JOINS, NAMES, ownRecord, checkProject, targetUserId } = require('../../lib/records');
+const { buildFilter, JOINS, NAMES, ownRecord, resolveTarget, targetUserId } = require('../../lib/records');
 const { resolveRate } = require('../customers');
 const audit = require('../../lib/audit');
 
@@ -26,22 +26,22 @@ router.get('/api/activities', auth, (req, res) => {
 
 function activityFields(req, existing) {
   const b = req.body;
-  const projectId = num(b.project_id, 'Proje');
-  checkProject(req, projectId, existing?.project_id);
+  const { companyId, projectId } = resolveTarget(req, existing);
   const hours = num(b.hours, 'Süre');
   if (hours <= 0 || hours > 24) bad('Süre 0 ile 24 saat arasında olmalı');
-  // Ücret ve para birimi kayda sabitlenir; proje değişirse yeniden belirlenir
-  let { daily_rate: dailyRate, currency } = existing && existing.project_id === projectId ? existing : resolveRate(projectId);
+  // Ücret ve para birimi kayda sabitlenir; şirket/proje değişirse yeniden belirlenir
+  const same = existing && existing.company_id === companyId && existing.project_id === projectId;
+  let { daily_rate: dailyRate, currency } = same ? existing : resolveRate(companyId, projectId);
   if (isAdmin(req) && b.daily_rate !== undefined && b.daily_rate !== '' && b.daily_rate !== null) dailyRate = num(b.daily_rate, 'Günlük ücret');
-  return [projectId, date(b.date), str(b.description, 'Açıklama'), hours, flag(b.billable), dailyRate, currency, targetUserId(req, existing)];
+  return [companyId, projectId, date(b.date), str(b.description, 'Açıklama'), hours, flag(b.billable), dailyRate, currency, targetUserId(req, existing)];
 }
 
 router.post('/api/activities', auth, (req, res) => {
   const values = activityFields(req);
   const id = tx(() => {
     const { lastInsertRowid } = run(
-      'INSERT INTO activities (project_id, date, description, hours, billable, daily_rate, currency, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      ...values);
+      `INSERT INTO activities (company_id, project_id, date, description, hours, billable, daily_rate, currency, user_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, ...values);
     audit.logCreate(req, 'activities', Number(lastInsertRowid));
     return Number(lastInsertRowid);
   });
@@ -52,8 +52,8 @@ router.put('/api/activities/:id', auth, (req, res) => {
   const before = ownRecord(req, 'activities', Number(req.params.id));
   const values = activityFields(req, before);
   tx(() => {
-    run('UPDATE activities SET project_id = ?, date = ?, description = ?, hours = ?, billable = ?, daily_rate = ?, currency = ?, user_id = ? WHERE id = ?',
-      ...values, before.id);
+    run(`UPDATE activities SET company_id = ?, project_id = ?, date = ?, description = ?, hours = ?, billable = ?,
+         daily_rate = ?, currency = ?, user_id = ? WHERE id = ?`, ...values, before.id);
     audit.logUpdate(req, 'activities', before);
   });
   res.json({ ok: true });

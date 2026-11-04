@@ -1,5 +1,6 @@
-import { state, isAdmin, esc, money, moneyByCurrency, hrs, today, fmtDate, parseHours, projectOptions, projectById, userOptions, clientProjectCell, yesNo, HOURS_PER_DAY } from '../core.js';
+import { isAdmin, esc, money, moneyByCurrency, hrs, today, fmtDate, parseHours, clientProjectCell, yesNo, HOURS_PER_DAY } from '../core.js';
 import { entryPage, footerCells } from '../components/entry-page.js';
+import { effectiveRate } from '../components/target-select.js';
 
 const amount = (r) => r.hours * r.daily_rate / HOURS_PER_DAY;
 
@@ -10,33 +11,34 @@ function totalsByCurrency(rows) {
   return t;
 }
 
+// Yönetici: seçilen müşteri/şirket/projenin geçerli ücretini göster
+function showRate(f) {
+  const hint = f.querySelector('[data-rate-hint]');
+  if (!hint) return;
+  const r = effectiveRate(f);
+  hint.textContent = r ? `Geçerli günlük ücret: ${money(r.daily_rate, r.currency)} (saatlik ${money(r.daily_rate / HOURS_PER_DAY, r.currency)}). Farklı bir ücret için “Günlük ücret” alanına yazın.` : '';
+}
+
 export function pageActivities() {
   entryPage({
     title: 'Aktiviteler',
     newTitle: 'Yeni aktivite',
     editTitle: 'Aktiviteyi düzenle',
     endpoint: '/api/activities',
-    fields: () => `
+    fields: ({ target, user }) => `
       <label>Tarih<input type="date" name="date" required></label>
-      <label class="wide">Müşteri › Şirket / Proje<select name="project_id" required>${projectOptions()}</select></label>
+      ${target}
       <label>Süre (saat)<input name="hours" placeholder="1,5 veya 1:30" inputmode="decimal" required></label>
       <label class="full">Açıklama<input name="description" placeholder="Ne üzerinde çalışıldı?" required></label>
-      ${isAdmin() ? `<label>Kullanıcı<select name="user_id">${userOptions()}</select></label>
-      <label>Günlük ücret<input name="daily_rate" inputmode="decimal" placeholder="Otomatik"></label>` : ''}
+      ${user}
+      ${isAdmin() ? '<label>Günlük ücret<input name="daily_rate" inputmode="decimal" placeholder="Otomatik"></label>' : ''}
       <label class="check"><input type="checkbox" name="billable"> Faturalanabilir</label>
       ${isAdmin() ? '<p class="hint full" data-rate-hint></p>' : ''}`,
     defaults: (f) => {
       f.elements.namedItem('date').value = today();
       f.elements.namedItem('billable').checked = true;
-      if (isAdmin()) f.elements.namedItem('user_id').value = state.user.id;
     },
-    // Yönetici: seçilen projenin geçerli ücretini göster
-    bind: (f) => {
-      if (!isAdmin()) return;
-      const sel = f.elements.namedItem('project_id');
-      sel.addEventListener('change', () => showRate(f));
-    },
-    afterReset: (f) => { if (isAdmin()) showRate(f); },
+    onTargetChange: showRate,
     toPayload: (d) => {
       const hours = parseHours(d.hours);
       if (!(hours > 0)) throw new Error('Süre geçersiz');
@@ -46,7 +48,7 @@ export function pageActivities() {
     columns: [
       { h: 'Tarih', v: (r) => fmtDate(r.date) },
       { h: 'Kullanıcı', admin: true, v: (r) => esc(r.user_name) },
-      { h: 'Müşteri › Şirket / Proje', v: clientProjectCell },
+      { h: 'Müşteri / Proje', v: clientProjectCell },
       { h: 'Açıklama', v: (r) => esc(r.description) },
       { h: 'Saat', key: 'hours', cls: 'num', v: (r) => hrs(r.hours) },
       { h: 'Fatura', key: 'billable', v: (r) => yesNo(r.billable) },
@@ -62,11 +64,4 @@ export function pageActivities() {
       });
     },
   });
-}
-
-function showRate(f) {
-  const hint = f.parentElement.querySelector('[data-rate-hint]');
-  const p = projectById(f.elements.namedItem('project_id').value);
-  if (!hint) return;
-  hint.textContent = p ? `Bu projenin geçerli günlük ücreti: ${money(p.effective_daily_rate, p.currency)} (saatlik ${money(p.effective_daily_rate / HOURS_PER_DAY, p.currency)}). Farklı bir ücret için yukarıya yazın.` : '';
 }

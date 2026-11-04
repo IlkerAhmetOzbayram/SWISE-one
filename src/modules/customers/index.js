@@ -29,9 +29,17 @@ const customerFields = (b) => [
   int(b.payment_days, 'Ödeme vadesi', { required: false }) ?? 30, str(b.notes, '', false), activeFlag(b),
 ];
 
+// VKN (10 hane) / TCKN (11 hane); yurt dışı vergi numaraları harf içerebilir. En fazla 11 karakter.
+function taxNo(v) {
+  const s = str(v, 'VKN / TCKN', false).replace(/\s+/g, '');
+  if (s.length > 11) bad('VKN / TCKN en fazla 11 karakter olabilir');
+  if (s && !/^[0-9A-Za-z]+$/.test(s)) bad('VKN / TCKN yalnızca rakam ve harf içerebilir');
+  return s;
+}
+
 function companyFields(b, customerId, { inherit = true } = {}) {
   return [
-    customerId, str(b.company_name ?? b.name, 'Şirket unvanı'), str(b.tax_no, '', false), str(b.tax_office, '', false),
+    customerId, str(b.company_name ?? b.name, 'Şirket unvanı'), taxNo(b.tax_no), str(b.tax_office, '', false),
     str(b.address, '', false), email(b.email), str(b.phone, '', false),
     inherit ? num(b.daily_rate, 'Günlük ücret', { required: false }) : null,
     inherit ? currency(b.currency, 'Para birimi', false) : null,
@@ -79,9 +87,10 @@ router.get('/api/companies', auth, (req, res) => {
     ? `co.*, COALESCE(co.daily_rate, cu.daily_rate) effective_daily_rate,
        COALESCE(co.currency, cu.currency) effective_currency,
        COALESCE(co.payment_days, cu.payment_days) effective_payment_days`
-    : 'co.id, co.customer_id, co.name, co.active';
-  res.json(all(`SELECT ${cols}, cu.name customer_name FROM companies co JOIN customers cu ON cu.id = co.customer_id
-                ORDER BY cu.name, co.name`));
+    : 'co.id, co.customer_id, co.name, co.active, COALESCE(co.currency, cu.currency) effective_currency';
+  // "usable": şirket ve müşterisi aktifse yeni kayıt girilebilir
+  res.json(all(`SELECT ${cols}, cu.name customer_name, (co.active AND cu.active) usable
+                FROM companies co JOIN customers cu ON cu.id = co.customer_id ORDER BY cu.name, co.name`));
 });
 
 function customerOf(b) {
@@ -196,12 +205,12 @@ router.put('/api/projects/:id', auth, admin, (req, res) => {
   res.json({ ok: true });
 });
 
-// Projenin geçerli günlük ücreti ve para birimi
-function resolveRate(projectId) {
-  const r = one(`SELECT COALESCE(p.daily_rate, co.daily_rate, cu.daily_rate) daily_rate, COALESCE(co.currency, cu.currency) currency
-                 FROM projects p JOIN companies co ON co.id = p.company_id JOIN customers cu ON cu.id = co.customer_id
-                 WHERE p.id = ?`, projectId);
-  if (!r) bad('Proje bulunamadı');
+// Şirketin (ve varsa projenin) geçerli günlük ücreti ve para birimi
+function resolveRate(companyId, projectId = null) {
+  const r = one(`SELECT COALESCE((SELECT daily_rate FROM projects WHERE id = ?), co.daily_rate, cu.daily_rate) daily_rate,
+                 COALESCE(co.currency, cu.currency) currency
+                 FROM companies co JOIN customers cu ON cu.id = co.customer_id WHERE co.id = ?`, projectId, companyId);
+  if (!r) bad('Şirket bulunamadı');
   return r;
 }
 

@@ -115,5 +115,5 @@ export const projectById = (id) => state.projects.find((p) => String(p.id) === S
 export const userOptions = (selected) => state.users.filter((u) => u.active !== 0).map((u) => opt(u.id, u.full_name, selected)).join('');
 
 export const clientProjectCell = (r) =>
-  `${esc(companyLabel(r.customer_name, r.company_name))}<div class="small">${esc(r.project_name)}</div>`;
+  `${esc(companyLabel(r.customer_name, r.company_name))}${r.project_name ? `<div class="small">${esc(r.project_name)}</div>` : ''}`;
 export const yesNo = (v, yes = 'Evet', no = 'Hayır') => `<span class="badge${v ? '' : ' off'}">${v ? yes : no}</span>`;

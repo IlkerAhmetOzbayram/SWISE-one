@@ -64,3 +64,24 @@ test('hatalı geçiş geri alınır ve sürüm ilerlemez', () => {
   assert.equal(version(db), before);
   assert.equal(db.prepare("SELECT name FROM sqlite_master WHERE name = 'yarim'").get(), undefined);
 });
+
+test('geçiş 4: aktivite ve masraflar şirkete bağlanır, proje isteğe bağlı olur', () => {
+  const db = new DatabaseSync(':memory:');
+  db.exec('PRAGMA foreign_keys = ON');
+  migrate(db, migrations.slice(0, 3));
+  db.exec(`
+    INSERT INTO users (username, full_name, password_hash) VALUES ('a', 'A', 'x');
+    INSERT INTO customers (name, daily_rate) VALUES ('C', 8000);
+    INSERT INTO companies (customer_id, name) VALUES (1, 'Ş1'), (1, 'Ş2');
+    INSERT INTO projects (company_id, name) VALUES (2, 'P');
+    INSERT INTO activities (user_id, project_id, date, description, hours, daily_rate, currency) VALUES (1, 1, '2026-11-01', 'x', 2, 8000, 'EUR');
+    INSERT INTO expenses (user_id, project_id, date, category, amount, currency) VALUES (1, 1, '2026-11-01', 'Ulaşım', 50, 'EUR');
+  `);
+  migrate(db);
+  assert.deepEqual({ ...db.prepare('SELECT company_id, project_id, daily_rate, currency FROM activities').get() },
+    { company_id: 2, project_id: 1, daily_rate: 8000, currency: 'EUR' });
+  assert.deepEqual({ ...db.prepare('SELECT company_id, project_id, amount, currency FROM expenses').get() },
+    { company_id: 2, project_id: 1, amount: 50, currency: 'EUR' });
+  db.prepare("INSERT INTO activities (user_id, company_id, date, description, hours) VALUES (1, 1, '2026-11-02', 'projesiz', 1)").run();
+  assert.deepEqual(db.prepare('PRAGMA foreign_key_check').all(), []);
+});

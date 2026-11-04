@@ -6,7 +6,13 @@ let srv;
 let admin;
 let ayse;
 const ids = {};
-const activity = (project_id, hours, extra = {}) => ({ date: '2026-11-02', project_id, description: 'İş', hours, billable: true, ...extra });
+const projectCompany = {};
+const activity = (project_id, hours, extra = {}) => ({ date: '2026-11-02', company_id: projectCompany[project_id], project_id, description: 'İş', hours, billable: true, ...extra });
+const project = async (company_id, name, extra = {}) => {
+  const id = (await admin('POST', '/api/projects', { company_id, name, ...extra })).data.id;
+  projectCompany[id] = company_id;
+  return id;
+};
 
 before(async () => {
   srv = await startServer();
@@ -29,18 +35,18 @@ before(async () => {
   ids.global = global.id;
   ids.globalCo = global.company_id;
 
-  ids.web = (await admin('POST', '/api/projects', { company_id: ids.enerji, name: 'Web Sitesi' })).data.id;
-  ids.ozel = (await admin('POST', '/api/projects', { company_id: ids.enerji, name: 'Özel Proje', daily_rate: '20000' })).data.id;
-  ids.depo = (await admin('POST', '/api/projects', { company_id: ids.lojistik, name: 'Depo Sistemi' })).data.id;
-  ids.eu = (await admin('POST', '/api/projects', { company_id: ids.globalCo, name: 'EU Rollout' })).data.id;
+  ids.web = await project(ids.enerji, 'Web Sitesi');
+  ids.ozel = await project(ids.enerji, 'Özel Proje', { daily_rate: '20000' });
+  ids.depo = await project(ids.lojistik, 'Depo Sistemi');
+  ids.eu = await project(ids.globalCo, 'EU Rollout');
   ids.ayse = (await admin('POST', '/api/users', { full_name: 'Ayşe Çalışan', username: 'ayse', password: 'secret2', role: 'user' })).data.id;
 
   ids.act1 = (await admin('POST', '/api/activities', activity(ids.web, 4))).data.id;           // 4/8 × 16000 = 8000 TRY
   await admin('POST', '/api/activities', activity(ids.ozel, 2));                                // 2/8 × 20000 = 5000 TRY
   await admin('POST', '/api/activities', activity(ids.web, 1, { billable: false }));            // faturasız
   await admin('POST', '/api/activities', activity(ids.eu, 8));                                  // 8/8 × 800 = 800 EUR
-  await admin('POST', '/api/expenses', { date: '2026-11-02', project_id: ids.web, category: 'Ulaşım', amount: '500', currency: 'TRY', vat_rate: '20', billable: true });
-  await admin('POST', '/api/expenses', { date: '2026-11-02', project_id: ids.eu, category: 'Konaklama', amount: '100', currency: 'EUR', vat_rate: '0', billable: true });
+  await admin('POST', '/api/expenses', { date: '2026-11-02', company_id: ids.enerji, project_id: ids.web, category: 'Ulaşım', amount: '500', currency: 'TRY', vat_rate: '20', billable: true });
+  await admin('POST', '/api/expenses', { date: '2026-11-02', company_id: ids.globalCo, project_id: ids.eu, category: 'Konaklama', amount: '100', currency: 'EUR', vat_rate: '0', billable: true });
 
   assert.equal((await ayse('POST', '/api/login', { username: 'ayse', password: 'secret2' })).status, 200);
   ids.ayseAct = (await ayse('POST', '/api/activities', activity(ids.depo, 8))).data.id;     // 8/8 × 24000 = 24000 TRY
@@ -89,7 +95,7 @@ test('müşteri ücreti sonradan değişince eski aktiviteler etkilenmez, yenile
 
 test('şirkete farklı para birimi verilirse projeleri o para birimiyle çalışır', async () => {
   const co = (await admin('POST', '/api/companies', { customer_id: ids.acme, name: 'Acme USA Inc.', currency: 'USD', daily_rate: '1000' })).data.id;
-  const p = (await admin('POST', '/api/projects', { company_id: co, name: 'US' })).data.id;
+  const p = await project(co, 'US');
   const { data } = await admin('GET', '/api/projects');
   assert.equal(data.find((x) => x.id === p).currency, 'USD');
   assert.equal(data.find((x) => x.id === ids.web).currency, 'TRY');
@@ -160,7 +166,7 @@ test('çalışan yalnızca kendi kayıtlarını görür; ücret, kişi ve rapora
 
 test('pasif şirketin projesine çalışan kayıt giremez', async () => {
   const co = (await admin('POST', '/api/companies', { customer_id: ids.acme, name: 'Kapanan Şirket' })).data.id;
-  const p = (await admin('POST', '/api/projects', { company_id: co, name: 'Eski' })).data.id;
+  const p = await project(co, 'Eski');
   await admin('PUT', `/api/companies/${co}`, { customer_id: ids.acme, name: 'Kapanan Şirket', active: false });
   const r = await ayse('POST', '/api/activities', activity(p, 1));
   assert.equal(r.status, 400);
@@ -229,4 +235,53 @@ test('yönetici veritabanı yedeğini indirebilir', async () => {
   const r = await admin('GET', '/api/admin/backup.db');
   assert.equal(r.status, 200);
   assert.equal(r.data.subarray(0, 15).toString(), 'SQLite format 3');
+});
+
+test('aktivite projesiz girilebilir; ücret şirketten/müşteriden gelir', async () => {
+  const r = await admin('POST', '/api/activities', { date: '2026-12-02', company_id: ids.lojistik, description: 'Toplantı', hours: 4, billable: true });
+  assert.equal(r.status, 200);
+  const a = (await admin('GET', '/api/activities?from=2026-12-02&to=2026-12-02')).data[0];
+  assert.equal(a.project_id, null);
+  assert.equal(a.project_name, null);
+  assert.equal(a.company_name, 'Acme Lojistik Ltd.');
+  assert.equal(a.daily_rate, 24000);
+  const rep = (await admin('GET', '/api/report?from=2026-12-02&to=2026-12-02')).data;
+  assert.equal(rep.customers[0].companies[0].projects[0].name, 'Proje dışı');
+  assert.equal(rep.totals[0].fee, 12000);
+  await admin('DELETE', `/api/activities/${r.data.id}`);
+});
+
+test('seçilen proje başka şirkete aitse kayıt reddedilir', async () => {
+  const r = await admin('POST', '/api/activities', { date: '2026-12-02', company_id: ids.lojistik, project_id: ids.web, description: 'x', hours: 1 });
+  assert.equal(r.status, 400);
+  assert.match(r.data.error, /şirkete ait değil/);
+});
+
+test('çalışan başkası adına kayıt giremez; kaydı giren kullanıcı yazılır', async () => {
+  const user = client(srv.base);
+  await admin('POST', '/api/users', { full_name: 'Zeynep', username: 'zeynep', password: 'secret3' });
+  await user('POST', '/api/login', { username: 'zeynep', password: 'secret3' });
+  const me = (await user('GET', '/api/me')).data;
+  const id = (await user('POST', '/api/activities', activity(ids.web, 1, { user_id: 1 }))).data.id;
+  const a = (await admin('GET', '/api/activities')).data.find((x) => x.id === id);
+  assert.equal(a.user_id, me.id);
+  assert.equal(a.user_name, 'Zeynep');
+  // Yönetici başka kullanıcı adına girebilir
+  const id2 = (await admin('POST', '/api/activities', activity(ids.web, 1, { user_id: me.id }))).data.id;
+  assert.equal((await admin('GET', '/api/activities')).data.find((x) => x.id === id2).user_id, me.id);
+  await admin('DELETE', `/api/activities/${id}`);
+  await admin('DELETE', `/api/activities/${id2}`);
+});
+
+test('VKN / TCKN en fazla 11 karakter, yalnızca rakam ve harf', async () => {
+  const base = { customer_id: ids.acme, name: 'Vergi Testi' };
+  assert.equal((await admin('POST', '/api/companies', { ...base, tax_no: '123456789012' })).status, 400);
+  assert.equal((await admin('POST', '/api/companies', { ...base, tax_no: '1234-5678' })).status, 400);
+  assert.equal((await admin('POST', '/api/customers', { name: 'Y', daily_rate: 1, currency: 'TRY', tax_no: '123456789012' })).status, 400);
+  const tckn = await admin('POST', '/api/companies', { ...base, tax_no: '12345678901' });
+  assert.equal(tckn.status, 200);
+  const foreign = await admin('POST', '/api/companies', { ...base, tax_no: 'DE 123456789' });
+  assert.equal(foreign.status, 200);
+  const list = (await admin('GET', '/api/companies')).data;
+  assert.equal(list.find((c) => c.id === foreign.data.id).tax_no, 'DE123456789');
 });

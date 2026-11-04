@@ -1,21 +1,27 @@
 // Aktivite / masraf giriş sayfası (ortak iskelet): form + filtreli liste
-import { state, isAdmin, $, main, api, toast, formToObj, fillForm, qs, projectOptions } from '../core.js';
+import { state, isAdmin, $, main, api, toast, formToObj, fillForm, qs, esc, userOptions } from '../core.js';
 import { filters, filterBar, bindFilterBar } from '../filters.js';
+import { targetFields, setTarget, getTarget, bindTarget, hasTargets } from './target-select.js';
 
 // Alt toplam satırı: ilk hücre "Toplam", diğerleri sütun anahtarına göre
 export function footerCells(cols, values) {
   return cols.map((c, i) => (i === 0 ? '<td>Toplam</td>' : `<td class="${c.cls || ''}">${values[c.key] ?? ''}</td>`)).join('');
 }
 
+// Kaydı giren kullanıcı: yalnızca yönetici değiştirebilir, diğerleri kendi adını görür
+const userField = () => (isAdmin()
+  ? `<label>Kullanıcı<select name="user_id">${userOptions()}</select></label>`
+  : `<label>Kullanıcı<input value="${esc(state.user.full_name)}" disabled></label>`);
+
 export function entryPage(cfg) {
-  const noProjects = !state.projects.some((p) => p.active);
+  const ready = hasTargets();
   main.innerHTML = `<h1>${cfg.title}</h1>
     <section class="card">
       <h2 data-title>${cfg.newTitle}</h2>
-      ${noProjects ? `<p class="hint">Henüz aktif proje yok. ${isAdmin() ? '<a href="#/musteriler">Müşteri ve proje ekleyin</a>.' : 'Yöneticinizden proje tanımlamasını isteyin.'}</p>` : ''}
-      <form class="grid" id="entryForm" ${noProjects ? 'hidden' : ''}>
+      ${ready ? '' : `<p class="hint">Henüz aktif müşteri yok. ${isAdmin() ? '<a href="#/musteriler">Müşteri ekleyin</a>.' : 'Yöneticinizden müşteri tanımlamasını isteyin.'}</p>`}
+      <form class="grid" id="entryForm" ${ready ? '' : 'hidden'}>
         <input type="hidden" name="_id">
-        ${cfg.fields()}
+        ${cfg.fields({ target: targetFields(), user: userField() })}
         <div class="actions"><button type="submit">Kaydet</button><button type="button" class="secondary" data-cancel hidden>Vazgeç</button></div>
       </form>
     </section>
@@ -30,13 +36,16 @@ export function entryPage(cfg) {
   const cancel = $('[data-cancel]');
   let rows = [];
 
+  // Yeni kayıttan sonra tarih ve müşteri/şirket/proje seçimi korunur (art arda giriş için)
   function reset(keepContext) {
-    const keep = { date: field('date').value, project_id: field('project_id').value };
+    const keep = { date: field('date').value, target: getTarget(form) };
     form.reset();
     field('_id').value = '';
     cfg.defaults(form);
-    if (keepContext && keep.date) { field('date').value = keep.date; field('project_id').value = keep.project_id; }
-    cfg.afterReset?.(form);
+    if (isAdmin()) field('user_id').value = state.user.id;
+    setTarget(form, keepContext ? keep.target : {});
+    if (keepContext && keep.date) field('date').value = keep.date;
+    cfg.onTargetChange?.(form);
     title.textContent = cfg.newTitle;
     cancel.hidden = true;
   }
@@ -59,6 +68,7 @@ export function entryPage(cfg) {
     const d = formToObj(form);
     const id = d._id;
     delete d._id;
+    delete d._customer;
     try {
       await api(id ? 'PUT' : 'POST', id ? `${cfg.endpoint}/${id}` : cfg.endpoint, cfg.toPayload(d));
       toast(id ? 'Kayıt güncellendi' : 'Kayıt eklendi');
@@ -73,9 +83,10 @@ export function entryPage(cfg) {
     const del = e.target.closest('[data-del]');
     if (edit) {
       const row = rows.find((r) => r.id === Number(edit.dataset.edit));
-      // Pasif projeli kayıt için seçeneklerin yeniden üretilmesi
-      field('project_id').innerHTML = projectOptions(row.project_id);
-      fillForm(form, { ...cfg.toForm(row), _id: row.id });
+      setTarget(form, row);
+      const { customer_id: _c, company_id: _co, project_id: _p, ...rest } = cfg.toForm(row);
+      fillForm(form, { ...rest, _id: row.id });
+      cfg.onTargetChange?.(form, { keepCurrency: true });
       title.textContent = cfg.editTitle;
       cancel.hidden = false;
       form.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -88,7 +99,7 @@ export function entryPage(cfg) {
     }
   };
 
-  cfg.bind?.(form);
+  bindTarget(form, (f) => cfg.onTargetChange?.(f));
   bindFilterBar(main, load);
   reset(false);
   load();

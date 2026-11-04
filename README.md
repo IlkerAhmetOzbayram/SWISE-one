@@ -101,11 +101,14 @@ docs/                     Yol haritası ve kararlar
 Müşteri (grup)    günlük ücret, varsayılan para birimi, ödeme vadesi
  └─ Şirket        fatura bilgileri (unvan, VKN, vergi dairesi, adres), stopaj, KDV muafiyeti;
     │             ücret/para birimi/vade boşsa müşteriden alınır
-    └─ Proje      isteğe bağlı kendi günlük ücreti
+    └─ Proje      isteğe bağlı; kendi günlük ücreti olabilir
 İletişim kişisi   müşteri geneline veya bir şirkete bağlı; "teklif alır" / "fatura alır"
 ```
 
 Yeni müşteri ilk şirketiyle birlikte oluşturulur. 1 gün = 8 saat.
+Aktivite ve masraflar müşteri/şirkete girilir; proje seçmek isteğe bağlıdır. Tek şirketli müşteride şirket
+seçimi gösterilmez. Kaydı giren kullanıcı otomatik yazılır; yalnızca yönetici değiştirebilir.
+VKN / TCKN en fazla 11 karakterdir (rakam ve harf).
 
 ## Ücret ve rapor hesapları
 

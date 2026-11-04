@@ -24,7 +24,7 @@ export function pageCustomers(param) {
         <h3 class="full form-section">İlk şirketin fatura bilgileri</h3>
         <p class="hint full" style="margin:-8px 0 0">Müşterinin altında en az bir şirket olur. Başka şirketleri sonradan ekleyebilirsiniz.</p>
         <label class="wide">Şirket unvanı<input name="company_name" placeholder="Boş bırakılırsa müşteri adı kullanılır"></label>
-        <label>VKN / TCKN<input name="tax_no"></label>
+        <label>VKN / TCKN<input name="tax_no" maxlength="11" pattern="[0-9A-Za-z]*" title="En fazla 11 karakter, yalnızca rakam ve harf"></label>
         <label>Vergi dairesi<input name="tax_office"></label>
         <label class="full">Adres<input name="address"></label>
         <label class="wide">E-posta<input type="email" name="email"></label>
@@ -120,7 +120,7 @@ async function pageCustomer(id) {
     emptyText: 'Şirket yok.', endpoint: '/api/companies', rows: companies, onSaved: rerender,
     fields: () => `
       <label class="wide">Şirket unvanı<input name="name" required></label>
-      <label>VKN / TCKN<input name="tax_no"></label>
+      <label>VKN / TCKN<input name="tax_no" maxlength="11" pattern="[0-9A-Za-z]*" title="En fazla 11 karakter, yalnızca rakam ve harf"></label>
       <label>Vergi dairesi<input name="tax_office"></label>
       <label class="full">Adres<input name="address"></label>
       <label class="wide">E-posta<input type="email" name="email"></label>
