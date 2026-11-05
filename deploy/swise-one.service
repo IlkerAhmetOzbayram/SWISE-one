@@ -1,0 +1,27 @@
+# SWISE One sistem servisi: sunucu açılınca başlar, çökerse yeniden başlatılır.
+# Kurulum betiği bu dosyayı /etc/systemd/system/swise-one.service olarak kopyalar.
+[Unit]
+Description=SWISE One
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=swise
+Group=swise
+WorkingDirectory=/opt/swise-one
+EnvironmentFile=/etc/swise-one.env
+ExecStart=/usr/bin/node --no-warnings server.js
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=15
+
+# Uygulama yalnızca veri klasörüne yazabilir
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/swise-one
+
+[Install]
+WantedBy=multi-user.target

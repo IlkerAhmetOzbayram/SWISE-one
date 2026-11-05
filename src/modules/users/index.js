@@ -1,5 +1,6 @@
 // Personel: genel bilgiler, hesap ve rol, hassas bilgiler (IBAN, acil durum kişisi), maaş geçmişi.
 // Hassas bilgilerin görüntülenmesi de işlem kaydına yazılır (KVKK).
+const crypto = require('crypto');
 const express = require('express');
 const { one, all, run, tx } = require('../../db');
 const { HttpError, bad } = require('../../lib/http');
@@ -7,6 +8,7 @@ const { str, num, date, flag, currency, email } = require('../../lib/validate');
 const { auth, can, requirePerm, hashPassword } = require('../../lib/auth');
 const { checkPassword } = require('../auth');
 const { getSettings } = require('../settings');
+const { createPasswordLink } = require('../../lib/password-links');
 const audit = require('../../lib/audit');
 
 const router = express.Router();
@@ -58,18 +60,44 @@ function keepOneAdmin(excludeId) {
   if (n === 0) bad('En az bir aktif Yönetici kalmalı');
 }
 
+// Yönetici hesabının parolasına yalnızca bir Yönetici dokunabilir
+const isLockedRole = (roleId) => !!one('SELECT locked FROM roles WHERE id = ?', roleId)?.locked;
+function guardAdminCredentials(req, roleId) {
+  if (isLockedRole(roleId) && !isLockedRole(req.user.role_id)) throw new HttpError(403, 'Yönetici hesabının parolasını yalnızca bir Yönetici değiştirebilir');
+}
+
+// Parola girilmezse kişi davet bağlantısıyla kendi parolasını belirler
 router.post('/api/users', auth, requirePerm('personnel.edit'), (req, res) => {
-  const pw = checkPassword(str(req.body.password, 'Parola'));
+  const pw = req.body.password ? checkPassword(String(req.body.password)) : null;
   const fields = generalFields(req.body);
   const roleId = roleFor(req, req.body);
-  const id = tx(() => {
+  const result = tx(() => {
     const { lastInsertRowid } = run(`INSERT INTO users (username, full_name, title, department, email, phone, start_date, end_date,
       employment_type, role_id, password_hash, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    ...fields, roleId, hashPassword(pw), req.body.active === undefined ? 1 : flag(req.body.active));
-    audit.logCreate(req, 'users', Number(lastInsertRowid));
-    return Number(lastInsertRowid);
+    ...fields, roleId, hashPassword(pw ?? crypto.randomBytes(24).toString('hex')), req.body.active === undefined ? 1 : flag(req.body.active));
+    const id = Number(lastInsertRowid);
+    audit.logCreate(req, 'users', id);
+    if (pw) return { id };
+    audit.record(req, 'invite', 'users', id);
+    return { id, link: createPasswordLink(id, 'invite', req.user.id, req) };
   });
-  res.json({ id });
+  res.json(result);
+});
+
+// Davet (henüz hiç giriş yapmamışsa) ya da parola sıfırlama bağlantısı
+router.post('/api/users/:id/password-link', auth, requirePerm('personnel.edit'), (req, res) => {
+  const id = Number(req.params.id);
+  const u = findUser(id);
+  if (!u.active) bad('Pasif personele bağlantı gönderilemez');
+  guardAdminCredentials(req, u.role_id);
+  const everLoggedIn = one(`SELECT 1 FROM audit_log WHERE entity = 'users' AND entity_id = ?
+    AND action IN ('login', 'invite_accepted', 'password_reset', 'setup', 'admin_grant') LIMIT 1`, id);
+  const purpose = everLoggedIn ? 'reset' : 'invite';
+  const link = tx(() => {
+    audit.record(req, purpose === 'invite' ? 'invite' : 'password_link', 'users', id);
+    return createPasswordLink(id, purpose, req.user.id, req);
+  });
+  res.json(link);
 });
 
 router.put('/api/users/:id', auth, requirePerm('personnel.edit'), (req, res) => {
@@ -88,6 +116,7 @@ router.put('/api/users/:id', auth, requirePerm('personnel.edit'), (req, res) => 
          employment_type = ?, role_id = ?, active = ? WHERE id = ?`, ...fields, roleId, active, id);
     audit.logUpdate(req, 'users', before);
     if (req.body.password) {
+      guardAdminCredentials(req, before.role_id);
       run('UPDATE users SET password_hash = ? WHERE id = ?', hashPassword(checkPassword(String(req.body.password))), id);
       run('DELETE FROM sessions WHERE user_id = ?', id);
       audit.record(req, 'password_reset', 'users', id);

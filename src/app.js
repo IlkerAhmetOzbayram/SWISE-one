@@ -3,6 +3,7 @@ const express = require('express');
 const path = require('path');
 const config = require('./config');
 const { HttpError } = require('./lib/http');
+const { one } = require('./db');
 const { securityHeaders, sameOrigin } = require('./lib/security');
 
 const MODULES = ['auth', 'settings', 'users', 'roles', 'customers', 'offers', 'accounting', 'activities', 'expenses', 'approvals', 'reports', 'calendar', 'budget',
@@ -17,6 +18,12 @@ function createApp() {
   app.use(express.json({ limit: '1mb' }));
   app.use('/api', sameOrigin);
   app.use(express.static(path.join(__dirname, '..', 'public')));
+
+  // Sunucu izleme ve güncelleme sonrası kontrol için (giriş gerekmez, bilgi içermez)
+  app.get('/api/health', (req, res) => {
+    one('SELECT 1');
+    res.json({ ok: true });
+  });
 
   for (const name of MODULES) app.use(require(`./modules/${name}`).router);
 

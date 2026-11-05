@@ -1,6 +1,6 @@
 // Uygulama girişi: oturum kontrolü, yetkiye göre menü ve sayfa yönlendirme
 import { state, can, $, api, esc, loadRefs } from './core.js';
-import { showLogin, showSetup } from './pages/auth.js';
+import { showLogin, showSetup, showSetupCommand, showPasswordLink } from './pages/auth.js';
 import { pageActivities } from './pages/activities.js';
 import { pageExpenses } from './pages/expenses.js';
 import { pageReport } from './pages/report.js';
@@ -50,12 +50,19 @@ function route() {
 }
 
 async function boot() {
+  // Davet / parola sıfırlama bağlantısı oturumdan bağımsız açılır
+  const link = location.hash.match(/^#\/parola\/([A-Za-z0-9_-]+)$/);
+  if (link) {
+    state.user = null;
+    return showPasswordLink(link[1], boot);
+  }
   try {
     state.user = await api('GET', '/api/me');
   } catch {
     state.user = null;
-    const { needsSetup } = await api('GET', '/api/setup');
-    return needsSetup ? showSetup(boot) : showLogin(boot);
+    const { needsSetup, webSetup } = await api('GET', '/api/setup');
+    if (needsSetup) return webSetup ? showSetup(boot) : showSetupCommand();
+    return showLogin(boot);
   }
   await loadRefs();
   $('#topbar').hidden = false;
@@ -66,7 +73,7 @@ async function boot() {
   route();
 }
 
-window.addEventListener('hashchange', route);
+window.addEventListener('hashchange', () => (location.hash.startsWith('#/parola/') ? boot() : route()));
 $('#logoutBtn').onclick = async () => {
   await api('POST', '/api/logout');
   state.user = null;

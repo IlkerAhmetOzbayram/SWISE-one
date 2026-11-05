@@ -376,3 +376,9 @@ textarea { font: inherit; resize: vertical; line-height: 1.45; }
 table.pnl td, table.pnl th { padding: 7px 8px; font-size: 13px; }
 table.pnl td:first-child { min-width: 170px; }
 .budget-card > b { display: block; margin: 2px 0 6px; color: var(--brand); }
+
+/* Faz 6.1: giriş bağlantısı ve kurulum komutu */
+.link-box { display: flex; gap: 8px; flex-wrap: wrap; }
+.link-box input { flex: 1 1 280px; font-family: ui-monospace, Consolas, monospace; font-size: 12px; }
+pre.cmd { background: var(--bg, #f3f6fb); border: 1px solid var(--line, #dbe3ef); border-radius: 8px; padding: 10px 12px;
+  font-size: 13px; white-space: pre-wrap; word-break: break-all; }

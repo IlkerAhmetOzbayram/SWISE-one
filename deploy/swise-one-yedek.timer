@@ -1,0 +1,10 @@
+# Her gece 03:30'da sunucu dışı yedek (sunucu kapalıyken kaçırılırsa açılınca çalışır)
+[Unit]
+Description=SWISE One gece sunucu dışı yedek
+
+[Timer]
+OnCalendar=*-*-* 03:30:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

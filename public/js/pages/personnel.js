@@ -19,7 +19,7 @@ async function loadRoles() {
 const generalFields = (withAccount) => `
   <label class="wide">Ad soyad<input name="full_name" required></label>
   <label>Kullanıcı adı<input name="username" autocomplete="off" required></label>
-  ${withAccount ? '<label>Parola<input type="password" name="password" autocomplete="new-password" minlength="8" placeholder="En az 8 karakter" required></label>' : '<span></span>'}
+  ${withAccount ? '<label>Parola<input type="password" name="password" autocomplete="new-password" minlength="8" placeholder="Boş bırakılırsa davet bağlantısı"></label>' : '<span></span>'}
   <label>Ünvan / pozisyon<input name="title"></label>
   <label>Departman<input name="department"></label>
   <label>E-posta<input type="email" name="email"></label>
@@ -57,8 +57,9 @@ export async function pagePersonnel(param) {
   newForm.onsubmit = async (e) => {
     e.preventDefault();
     try {
-      const { id } = await api('POST', '/api/users', formToObj(newForm));
+      const { id, link } = await api('POST', '/api/users', formToObj(newForm));
       await loadRefs();
+      pendingLink = link ? { id, link } : null;
       toast('Personel oluşturuldu');
       location.hash = `#/personel/${id}`;
     } catch (err) { toast(err.message, true); }
@@ -85,6 +86,33 @@ export async function pagePersonnel(param) {
   render();
 }
 
+// Yeni personel davetle oluşturulduysa bağlantı kartta gösterilir
+let pendingLink = null;
+
+// Tek kullanımlık bağlantı: kopyalama ve mail taslağı (gönderim elle yapılır)
+function showLink(box, u, link) {
+  const invite = link.purpose === 'invite';
+  const until = new Date(link.expires_at).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' });
+  const subject = invite ? 'SWISE One hesabınız' : 'SWISE One parola sıfırlama';
+  const body = `Merhaba ${u.full_name},\n\n${invite ? 'SWISE One hesabınız oluşturuldu.' : 'SWISE One parolanızı sıfırlamak için bağlantınız hazır.'}\n`
+    + `Kullanıcı adınız: ${u.username}\n\nAşağıdaki bağlantıdan parolanızı belirleyip giriş yapabilirsiniz `
+    + `(${until} tarihine kadar geçerli, tek kullanımlık):\n${link.url}\n`;
+  box.hidden = false;
+  box.innerHTML = `<p class="hint" style="margin:0 0 8px">${invite ? 'Davet' : 'Parola sıfırlama'} bağlantısı · ${until} tarihine kadar geçerli, tek kullanımlık.
+      Bağlantı bir daha gösterilmez; yenisi oluşturulursa bu geçersiz olur.</p>
+    <div class="link-box"><input readonly value="${esc(link.url)}" data-link-url>
+      <button type="button" class="secondary" data-copy>Kopyala</button>
+      <button type="button" class="secondary" data-mail>Mail taslağı</button></div>`;
+  $('[data-copy]', box).onclick = async () => {
+    const input = $('[data-link-url]', box);
+    try { await navigator.clipboard.writeText(input.value); } catch { input.select(); document.execCommand('copy'); }
+    toast('Bağlantı kopyalandı');
+  };
+  $('[data-mail]', box).onclick = () => {
+    location.href = `mailto:${encodeURIComponent(u.email || '')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  };
+}
+
 async function pagePerson(id) {
   let u;
   try { u = await api('GET', `/api/personnel/${id}`); } catch (err) { return toast(err.message, true); }
@@ -103,6 +131,9 @@ async function pagePerson(id) {
       </form>
     </section>
     ${editable ? `<section class="card"><h2>Hesap</h2>
+      <div class="actions" style="margin-bottom:12px"><button type="button" data-link>Giriş bağlantısı oluştur</button></div>
+      <div data-link-box hidden></div>
+      <p class="hint" style="margin:12px 0">Kişi bağlantıdan kendi parolasını belirler. İsterseniz parolayı aşağıdan siz de belirleyebilirsiniz.</p>
       <form class="grid" data-password>
         <label class="wide">Yeni parola<input type="password" name="password" autocomplete="new-password" minlength="8" placeholder="En az 8 karakter" required></label>
         <div class="actions"><button type="submit">Parolayı sıfırla</button>
@@ -131,6 +162,12 @@ async function pagePerson(id) {
 
   const pform = $('[data-password]');
   if (pform) {
+    const linkBox = $('[data-link-box]');
+    if (pendingLink?.id === id) showLink(linkBox, u, pendingLink.link);
+    pendingLink = null;
+    $('[data-link]').onclick = async () => {
+      try { showLink(linkBox, u, await api('POST', `/api/users/${id}/password-link`, {})); } catch (err) { toast(err.message, true); }
+    };
     pform.onsubmit = async (e) => {
       e.preventDefault();
       try {

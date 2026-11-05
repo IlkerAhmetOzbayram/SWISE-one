@@ -12,6 +12,10 @@ module.exports = {
   noLoginEnabled,
   noLogin: noLoginEnabled(process.env, process.argv),
   port: Number(process.env.PORT) || 3000,
+  // Bulutta nginx arkasında yalnızca 127.0.0.1 dinlenir
+  host: process.env.HOST || undefined,
+  // Davet ve parola bağlantılarında kullanılan dış adres (örn. https://one.swise.com.tr)
+  publicUrl: (process.env.PUBLIC_URL || '').replace(/\/+$/, ''),
   dbPath: process.env.DB_PATH || path.join(root, 'data.db'),
   backupDir: process.env.BACKUP_DIR || path.join(root, 'backups'),
   // Teklif PDF'leri ve imzalı dosyalar
