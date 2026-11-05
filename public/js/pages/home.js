@@ -75,6 +75,10 @@ function notices(d) {
   const out = [];
   const me = d.me;
   if (d.pending_weeks) out.push(`<div class="notice">${d.pending_weeks} hafta onayınızı bekliyor. <a href="#/onaylar/hafta">Onaylara git →</a></div>`);
+  if (d.pending_offers) out.push(`<div class="notice">${d.pending_offers} teklif onayınızı bekliyor. <a href="#/onaylar/teklif">Onaylara git →</a></div>`);
+  for (const r of me.returned_offers || []) {
+    out.push(`<div class="notice danger">${esc(r.number)} teklifiniz geri gönderildi: “${esc(r.review_note)}”. <a href="#/teklifler/${r.id}">Düzelt →</a></div>`);
+  }
   if (d.pending_expenses) out.push(`<div class="notice">${d.pending_expenses} masraf onayınızı bekliyor. <a href="#/onaylar/masraf">Onaylara git →</a></div>`);
   for (const w of me.rejected_weeks) {
     out.push(`<div class="notice danger">${fmtDate(w.week_start)} haftanız düzeltme için geri gönderildi${w.note ? `: “${esc(w.note)}”` : ''}. <a href="#/efor/hafta">Düzelt →</a></div>`);

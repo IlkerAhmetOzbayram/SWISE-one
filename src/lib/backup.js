@@ -31,12 +31,31 @@ function dailyBackup(db, dir, keep, now = new Date()) {
   return { file, created };
 }
 
-// Açılışta ve saatte bir kontrol eder; o günün yedeği yoksa alır
-function scheduleDailyBackup(db, { backupDir, backupKeep }) {
+// Yüklenen dosyalar (teklif PDF'leri, imzalı dosyalar) değişmez; yedekte olmayanlar kopyalanır
+function syncUploads(src, dest) {
+  if (!src || !fs.existsSync(src)) return 0;
+  let copied = 0;
+  for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
+    const from = path.join(src, entry.name);
+    const to = path.join(dest, entry.name);
+    if (entry.isDirectory()) copied += syncUploads(from, to);
+    else if (!fs.existsSync(to) || fs.statSync(to).size !== fs.statSync(from).size) {
+      fs.mkdirSync(dest, { recursive: true });
+      fs.copyFileSync(from, to);
+      copied += 1;
+    }
+  }
+  return copied;
+}
+
+// Açılışta ve saatte bir kontrol eder; o günün yedeği yoksa alır, yeni yüklenen dosyaları kopyalar
+function scheduleDailyBackup(db, { backupDir, backupKeep, uploadDir }) {
   const tick = () => {
     try {
       const r = dailyBackup(db, backupDir, backupKeep);
       if (r.created) console.log(`Yedek alındı: ${r.file}`);
+      const n = syncUploads(uploadDir, path.join(backupDir, 'uploads'));
+      if (n) console.log(`Yedeğe ${n} dosya kopyalandı`);
     } catch (err) {
       console.error('Yedek alınamadı:', err.message);
     }
@@ -54,4 +73,4 @@ function tempSnapshot(db) {
   return file;
 }
 
-module.exports = { dailyBackup, listBackups, scheduleDailyBackup, tempSnapshot };
+module.exports = { dailyBackup, listBackups, scheduleDailyBackup, tempSnapshot, syncUploads };

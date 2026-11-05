@@ -15,6 +15,20 @@ export function pageSettings() {
         <label class="check full"><input type="checkbox" name="show_own_salary" ${s.show_own_salary === '1' ? 'checked' : ''}> Personel kendi maaş geçmişini personel kartında görebilsin</label>
         <div class="actions"><button type="submit">Kaydet</button></div>
       </form></section>
+    <section class="card"><h2>Teklif şablonu</h2>
+      <p class="hint" style="margin:-6px 0 14px">Yeni tekliflerde başlangıç metni olarak kullanılır; her teklifte değiştirilebilir.</p>
+      <form class="grid" data-offer-template>
+        <label>Numara öneki<input name="offer_number_prefix" value="${esc(s.offer_number_prefix || 'SWISE')}" required maxlength="12"></label>
+        <label>İmza yetkilisi<input name="offer_signatory_name" value="${esc(s.offer_signatory_name || '')}" placeholder="Ad Soyad"></label>
+        <label>Unvan (TR)<input name="offer_signatory_title" value="${esc(s.offer_signatory_title || '')}"></label>
+        <label>Unvan (EN)<input name="offer_signatory_title_en" value="${esc(s.offer_signatory_title_en || '')}"></label>
+        <p class="hint full" style="margin:0">Teklif numarası örneği: <b>${esc(s.offer_number_prefix || 'SWISE')}-${new Date().getFullYear()}-0001</b></p>
+        ${['tr', 'en'].map((l) => `<h3 class="full form-section">${l === 'tr' ? 'Türkçe metinler' : 'English texts'}</h3>
+          <label class="full">Giriş metni<textarea name="offer_intro_${l}" rows="3">${esc(s[`offer_intro_${l}`] || '')}</textarea></label>
+          <label class="wide">Varsayımlar ve hariç tutulanlar<textarea name="offer_assumptions_${l}" rows="4">${esc(s[`offer_assumptions_${l}`] || '')}</textarea></label>
+          <label class="wide">Şartlar<textarea name="offer_terms_${l}" rows="4">${esc(s[`offer_terms_${l}`] || '')}</textarea></label>`).join('')}
+        <div class="actions full"><button type="submit">Şablonu kaydet</button></div>
+      </form></section>
     <div data-holidays></div>
     <section class="card"><h2>Yedekler</h2>
       <p class="hint" style="margin:0 0 12px">Veritabanının yedeği her gün otomatik alınır. Anlık bir kopyayı bilgisayarınıza da indirebilirsiniz.</p>
@@ -41,6 +55,15 @@ export function pageSettings() {
       } catch (err) { toast(err.message, true); }
     };
     $('[data-backup-download]').onclick = () => { location.href = '/api/admin/backup.db'; };
+    const tform = $('[data-offer-template]');
+    tform.onsubmit = async (e) => {
+      e.preventDefault();
+      try {
+        await api('PUT', '/api/settings/offer-template', formToObj(tform));
+        await loadRefs();
+        toast('Teklif şablonu kaydedildi');
+      } catch (err) { toast(err.message, true); }
+    };
     loadBackups();
     loadHolidays();
   }

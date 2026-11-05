@@ -7,4 +7,5 @@ module.exports = [
   require('./004-proje-istege-bagli'),
   require('./005-takvim-plan'),
   require('./006-yetki-personel-onay'),
+  require('./007-teklif'),
 ];

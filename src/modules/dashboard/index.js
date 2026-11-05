@@ -69,6 +69,10 @@ router.get('/api/dashboard', auth, (req, res) => {
   // Onay bekleyenler (onay yetkisi olanlara)
   if (can(req, 'activities.approve')) result.pending_weeks = one("SELECT COUNT(*) n FROM timesheets WHERE status = 'submitted'").n;
   if (can(req, 'expenses.approve')) result.pending_expenses = one("SELECT COUNT(*) n FROM expenses WHERE status = 'pending'").n;
+  if (can(req, 'offers.approve')) result.pending_offers = one("SELECT COUNT(*) n FROM offers WHERE status = 'pending_approval'").n;
+  if (can(req, 'offers.edit')) {
+    result.me.returned_offers = all("SELECT id, number, title, review_note FROM offers WHERE created_by = ? AND status = 'draft' AND review_note != ''", req.user.id);
+  }
 
   if (can(req, 'budget.view')) result.budget = buildBudget(month, today).totals;
   if (can(req, 'customers.view')) {

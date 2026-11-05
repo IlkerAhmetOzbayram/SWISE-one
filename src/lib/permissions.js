@@ -8,6 +8,7 @@ const CATALOG = [
   { module: 'activities', label: 'Aktivite', actions: { view: SCOPES, edit: ['own', 'all'], approve: true } },
   { module: 'expenses', label: 'Masraf', actions: { view: SCOPES, edit: ['own', 'all'], approve: true } },
   { module: 'customers', label: 'Müşteriler', actions: { view: true, edit: true } },
+  { module: 'offers', label: 'Teklifler', actions: { view: SCOPES, edit: ['own', 'all'], approve: true } },
   { module: 'rates', label: 'Ücret ve tutarlar', actions: { view: true } },
   { module: 'reports', label: 'Muhasebe raporu', actions: { view: true } },
   { module: 'effort_report', label: 'Müşteri efor raporu', actions: { view: ['assigned', 'all'] } },

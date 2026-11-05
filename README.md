@@ -49,6 +49,7 @@ npm run parola-sifirla -- <kullanıcı adı>
 | `BACKUP_KEEP` | `14` | Saklanacak günlük yedek sayısı |
 | `NODE_ENV` | — | Bulutta `production`: çerez yalnızca HTTPS'te gönderilir, HSTS açılır |
 | `TRUST_PROXY` | — | Uygulama bir ters vekil (nginx, yük dengeleyici) arkasındaysa `1` |
+| `UPLOAD_DIR` | `uploads/` | Teklif PDF'leri ve imzalı dosyalar |
 | `NO_LOGIN` | — | `1`: girişsiz geliştirme modu (`npm run gelistirme` ile aynı); canlıda yok sayılır |
 
 ## Veri ve yedekler
@@ -109,6 +110,17 @@ kapatma yetkileri ayrı ayrı verilir; kayıt kapsamı *kendi*, *sorumlu olduğu
   raporunda müşteriye yansıtılmaz. Onaylanan masrafı yalnızca onaylayan değiştirebilir.
 - **Haftalık efor:** çalışan haftasını onaya gönderir; onaylanan hafta kilitlenir ("Yeniden aç" ile açılır).
 - **Ay kapanışı:** kapalı ayın aktivite ve masrafları kimse tarafından değiştirilemez; yalnızca Yönetici yeniden açar.
+
+## Teklifler
+
+- Teklif Türkçe veya İngilizce hazırlanır; müşteri › şirket, ilgili kişi ("teklif alır" işaretliler önerilir),
+  kalemler (danışmanlık adam-gün, sabit ücret, lisans/masraf; iskonto), ödeme planı, kapsam, varsayımlar ve şartlar.
+- Numara otomatiktir: `ÖNEK-YIL-SIRA` (örn. SWISE-2026-0001); önek ve şablon metinleri Ayarlar → Teklif şablonu.
+- Akış: Taslak → Onay bekliyor → Onaylandı (PDF dondurulur, SHA-256 kaydedilir) → İmzalandı (imzalı dosya yüklenir)
+  → Gönderildi → Kabul / Red. Gönderilmiş teklifin geçerlilik süresi geçerse "süresi doldu" görünür.
+- Revizyon açıldığında teklif yeniden taslak olur; önceki sürümün PDF'i ve imzalı dosyası arşivde değişmeden kalır.
+- Mail gönderimi elle yapılır: "Mail taslağı" alıcıları ve metni doldurulmuş bir taslak açar; dosya elle eklenir.
+- Dosyalar `uploads/` klasöründe tutulur (`UPLOAD_DIR`) ve günlük yedekte `backups/uploads/` altına kopyalanır.
 
 ## Personel ve KVKK
 

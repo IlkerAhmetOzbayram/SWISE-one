@@ -19,6 +19,11 @@ Her faz ayrı bir dalda (`faz-N/...`) geliştirilir, test edilir, onaylandıktan
 | Proje Yöneticisi | Müşteriye sorumlu olarak atanır; o müşterinin tüm eforunu ve raporunu görür, ücret/maaş görmez |
 | Onay akışları | Masraf onayı; haftalık efor onayı (gönder → onayla/geri gönder); ay kapanışı (kilit, yalnızca Yönetici yeniden açar) |
 | Hassas personel bilgileri | Maaş geçmişi, IBAN, acil durum kişisi (TCKN tutulmaz); görüntüleme işlem kaydına yazılır |
+| Teklif dili | Türkçe veya İngilizce (teklif bazında) |
+| Teklif onayı | Hazırlayan onaya gönderir; onay yetkilisi (varsayılan Yönetici) onaylayınca PDF dondurulur |
+| Teklif bölümleri | Kapsam, fiyatlandırma, ödeme planı, varsayımlar ve hariç tutulanlar, şartlar, imza |
+| Teklif kabulü | Yalnızca durum "Kabul" olur; proje/plan elle açılır |
+| E-imza | Dondurulan PDF indirilip token/mobil imzayla imzalanır, imzalı dosya (.pdf/.p7s/.imz) yüklenir; doğrulama Faz 6 |
 | Roller | 4 hazır rol (Yönetici kilitli) + özel rol; modül × işlem yetki matrisi, kapsam: kendi / sorumlu olduğu / tümü |
 | Ücret | Müşteri ücreti günlük girilir; 1 gün = 8 saat |
 | Müşteri yapısı | Müşteri (grup) → Şirket (fatura birimi) → Proje. Ücret önceliği proje → şirket → müşteri |
@@ -35,7 +40,7 @@ Her faz ayrı bir dalda (`faz-N/...`) geliştirilir, test edilir, onaylandıktan
 | 1 | Müşteri yapısı: müşteri → şirket → proje, fatura bilgileri, iletişim kişileri, günlük ücret (8 saat), para birimi, ödeme vadesi, KDV muafiyeti | ✅ Tamamlandı (04.11.2026) |
 | 2 | Aktivite ve raporlama: ana sayfa, efor ekranı (günlük/haftalık çizelge/aylık takvim), müşteri efor raporu + Excel, tatil listesi, aylık müşteri planı ve bütçe tahmini | ✅ Tamamlandı (04.11.2026) |
 | 3 | Personel, yönetim, yetkilendirme: personel kartı, maaş geçmişi, hassas bilgiler, 4 hazır rol + özel rol, yetki matrisi, masraf onayı, haftalık efor onayı, ay kapanışı, KVKK | ✅ Tamamlandı (05.11.2026) |
-| 4 | Teklif: şablon, hazırlama, PDF, e-imza (token/mobil), mail ile gönderim, arşiv, durum takibi | ⏳ |
+| 4 | Teklif: TR/EN teklif, kalemler ve ödeme planı, iç onay, PDF dondurma (SHA-256), imzalı dosya yükleme, mail taslağı, durum takibi, sürümlü arşiv | ✅ Tamamlandı — onay bekliyor |
 | 5 | Muhasebe: gelir/gider hareketleri, gelen/giden fatura, cari bakiye, personel cari (maaş, SGK, avans), aylık bütçe raporu | ⏳ |
 | 6 | Entegrasyonlar: Microsoft 365 mail, e-imza servisi, e-fatura entegratörü, banka hareketleri, bulut kurulumu | ⏳ |
 

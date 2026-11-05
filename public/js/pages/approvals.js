@@ -1,10 +1,12 @@
 // Onaylar: haftalık efor onayı, masraf onayı ve ay kapanışı (#/onaylar/hafta | masraf | ay)
 import { can, $, main, api, toast, esc, money, hrs, fmtDate, fmtDateTime, addDays, today, monthLabel, addMonths, clientProjectCell, HOURS_PER_DAY } from '../core.js';
 import { showWeek } from './effort.js';
+import { offerBadge } from './offers.js';
 
 const TABS = [
   { id: 'hafta', title: 'Haftalık efor', allowed: () => can('activities.approve'), render: weeksTab },
   { id: 'masraf', title: 'Masraflar', allowed: () => can('expenses.approve'), render: expensesTab },
+  { id: 'teklif', title: 'Teklifler', allowed: () => can('offers.approve'), render: offersTab },
   { id: 'ay', title: 'Ay kapanışı', allowed: () => can('period.close') || can('period.reopen'), render: periodTab },
 ];
 
@@ -82,6 +84,19 @@ async function expensesTab(box) {
       expensesTab(box);
     } catch (err) { toast(err.message, true); }
   };
+}
+
+async function offersTab(box) {
+  let rows;
+  try { rows = await api('GET', '/api/offers?status=pending_approval'); } catch (err) { return toast(err.message, true); }
+  box.innerHTML = `<h2>Onay bekleyen teklifler</h2>
+    ${rows.length ? `<div class="table-wrap"><table>
+      <thead><tr><th>Teklif no</th><th>Konu</th><th>Müşteri</th><th>Hazırlayan</th><th class="num">Tutar</th><th>Durum</th><th></th></tr></thead>
+      <tbody>${rows.map((o) => `<tr><td><b>${esc(o.number)}</b> <span class="small">Rev.${o.revision}</span></td><td>${esc(o.title)}</td>
+        <td>${esc(o.customer_name)}</td><td>${esc(o.created_by_name)}</td><td class="num">${money(o.total, o.currency)}</td><td>${offerBadge(o)}</td>
+        <td class="num"><a href="#/teklifler/${o.id}">İncele →</a></td></tr>`).join('')}</tbody></table></div>`
+      : '<div class="empty">Onay bekleyen teklif yok. 👍</div>'}
+    <p class="hint">Teklifi inceleyip onayladığınızda PDF dondurulur ve imzaya hazır hale gelir.</p>`;
 }
 
 let periodMonth = addMonths(today().slice(0, 7), -1);

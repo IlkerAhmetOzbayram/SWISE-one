@@ -5,7 +5,7 @@ const config = require('./config');
 const { HttpError } = require('./lib/http');
 const { securityHeaders, sameOrigin } = require('./lib/security');
 
-const MODULES = ['auth', 'settings', 'users', 'roles', 'customers', 'activities', 'expenses', 'approvals', 'reports', 'calendar', 'budget',
+const MODULES = ['auth', 'settings', 'users', 'roles', 'customers', 'offers', 'activities', 'expenses', 'approvals', 'reports', 'calendar', 'budget',
   'dashboard', 'audit', 'backup'];
 
 function createApp() {

@@ -13,6 +13,7 @@ import { pageAudit } from './pages/audit.js';
 import { pageHome } from './pages/home.js';
 import { pageEffort } from './pages/effort.js';
 import { pageBudget } from './pages/budget.js';
+import { pageOffers } from './pages/offers.js';
 
 // perm: menüde görünme ve erişim koşulu; allow: parametreli erişim (örn. kişinin kendi personel kartı)
 const ROUTES = [
@@ -20,7 +21,8 @@ const ROUTES = [
   { id: 'aktiviteler', title: 'Aktivite Giriş', perm: () => can('activities.edit'), render: pageActivities },
   { id: 'efor', title: 'Aktivite Listesi', perm: () => can('activities.view'), render: pageEffort },
   { id: 'masraflar', title: 'Masraflar', perm: () => can('expenses.view'), render: pageExpenses },
-  { id: 'onaylar', title: 'Onaylar', perm: () => can('activities.approve') || can('expenses.approve') || can('period.close') || can('period.reopen'), render: pageApprovals },
+  { id: 'teklifler', title: 'Teklifler', perm: () => can('offers.view'), render: pageOffers },
+  { id: 'onaylar', title: 'Onaylar', perm: () => can('activities.approve') || can('expenses.approve') || can('offers.approve') || can('period.close') || can('period.reopen'), render: pageApprovals },
   { id: 'rapor', title: 'Raporlar', perm: () => can('reports.view') || can('effort_report.view'), render: pageReport },
   { id: 'butce', title: 'Bütçe', perm: () => can('budget.view'), render: pageBudget },
   { id: 'musteriler', title: 'Müşteriler', perm: () => can('customers.view'), render: pageCustomers },
