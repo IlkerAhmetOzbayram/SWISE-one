@@ -42,7 +42,7 @@ Her faz ayrı bir dalda (`faz-N/...`) geliştirilir, test edilir, onaylandıktan
 | 3 | Personel, yönetim, yetkilendirme: personel kartı, maaş geçmişi, hassas bilgiler, 4 hazır rol + özel rol, yetki matrisi, masraf onayı, haftalık efor onayı, ay kapanışı, KVKK | ✅ Tamamlandı (05.11.2026) |
 | 4 | Teklif: TR/EN teklif, kalemler ve ödeme planı, iç onay, PDF dondurma (SHA-256), imzalı dosya yükleme, mail taslağı, durum takibi, sürümlü arşiv | ✅ Tamamlandı (05.11.2026) |
 | 5 | Muhasebe: gelir/gider hareketleri, gelen/giden fatura, cari bakiye, personel cari (maaş, SGK, avans), aylık bütçe raporu | ✅ Tamamlandı (05.11.2026) |
-| 6 | Entegrasyonlar: Microsoft 365 mail, e-imza servisi, e-fatura entegratörü, banka hareketleri, bulut kurulumu | 🔄 6.1 bulut ve giriş tamamlandı — onay bekliyor |
+| 6 | Entegrasyonlar: Microsoft 365 mail, e-imza servisi, e-fatura entegratörü, banka hareketleri, bulut kurulumu | 🔄 6.1 tamamlandı (05.11.2026); 6.2–6.5 sırada |
 
 Fazların sırası bağımlılıklara göre belirlendi: teklif ve muhasebe müşteri kaydına,
 maaş/cari gibi hassas veriler ise yetkilendirmeye dayanır.
@@ -110,7 +110,7 @@ Faz 6 kararları (05.11.2026):
 
 | Adım | Kapsam | Durum |
 |---|---|---|
-| 6.1 | Bulut kurulum betikleri (nginx, HTTPS, servis, güvenlik duvarı), `swise-one` yönetim komutu (güncelleme + otomatik geri dönüş, yedek, geri yükleme), şifreli sunucu dışı yedek, davet/parola bağlantıları, komutla yönetici oluşturma | ✅ Kod tamam — sunucuda kurulum bekliyor |
+| 6.1 | Bulut kurulum betikleri (nginx, HTTPS, servis, güvenlik duvarı), `swise-one` yönetim komutu (güncelleme + otomatik geri dönüş, yedek, geri yükleme), şifreli sunucu dışı yedek, davet/parola bağlantıları, komutla yönetici oluşturma | ✅ Onaylandı (05.11.2026) — sunucuda kurulum bekliyor |
 | 6.2 | Microsoft ile giriş, teklif/fatura mailinin uygulamadan gönderimi | ⏳ |
 | 6.3 | Yüklenen imzalı PDF'in imza doğrulaması | ⏳ |
 | 6.4 | E-fatura / e-arşiv entegratörü | ⏳ |
