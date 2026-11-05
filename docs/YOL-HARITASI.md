@@ -41,7 +41,7 @@ Her faz ayrı bir dalda (`faz-N/...`) geliştirilir, test edilir, onaylandıktan
 | 2 | Aktivite ve raporlama: ana sayfa, efor ekranı (günlük/haftalık çizelge/aylık takvim), müşteri efor raporu + Excel, tatil listesi, aylık müşteri planı ve bütçe tahmini | ✅ Tamamlandı (04.11.2026) |
 | 3 | Personel, yönetim, yetkilendirme: personel kartı, maaş geçmişi, hassas bilgiler, 4 hazır rol + özel rol, yetki matrisi, masraf onayı, haftalık efor onayı, ay kapanışı, KVKK | ✅ Tamamlandı (05.11.2026) |
 | 4 | Teklif: TR/EN teklif, kalemler ve ödeme planı, iç onay, PDF dondurma (SHA-256), imzalı dosya yükleme, mail taslağı, durum takibi, sürümlü arşiv | ✅ Tamamlandı (05.11.2026) |
-| 5 | Muhasebe: gelir/gider hareketleri, gelen/giden fatura, cari bakiye, personel cari (maaş, SGK, avans), aylık bütçe raporu | ✅ Tamamlandı — onay bekliyor |
+| 5 | Muhasebe: gelir/gider hareketleri, gelen/giden fatura, cari bakiye, personel cari (maaş, SGK, avans), aylık bütçe raporu | ✅ Tamamlandı (05.11.2026) |
 | 6 | Entegrasyonlar: Microsoft 365 mail, e-imza servisi, e-fatura entegratörü, banka hareketleri, bulut kurulumu | ⏳ |
 
 Fazların sırası bağımlılıklara göre belirlendi: teklif ve muhasebe müşteri kaydına,
