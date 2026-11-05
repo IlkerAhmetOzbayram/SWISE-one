@@ -319,3 +319,26 @@ table.budget th.center { text-align: center; border-bottom: none; }
   .stats { grid-template-columns: repeat(4, 1fr); }
   th, tr.total td, tr.customer td, .badge.cur { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* ---------- Faz 3: onaylar, personel, roller ---------- */
+.badge.warn { background: #fff1d6; color: #8a5a00; }
+.approval-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 16px; margin-bottom: 16px; border-radius: 12px; background: var(--blue-50); border: 1px solid var(--blue-100); }
+.approval-bar.warn { background: #fffaf0; border-color: #f4e2b8; }
+.approval-bar.danger { background: #fdf3f2; border-color: #f4d0cc; }
+.approval-bar .small { margin-left: 6px; }
+.reject-note { margin-top: 6px; color: var(--danger); font-size: 13px; }
+.matrix td, .matrix th { text-align: center; }
+.matrix td:first-child, .matrix th:first-child { text-align: left; }
+.matrix select { padding: 5px 8px; font-size: 13px; }
+.masked { font-family: ui-monospace, Consolas, monospace; letter-spacing: .04em; }
+.notice { padding: 12px 14px; border-radius: 10px; background: var(--blue-50); border: 1px solid var(--blue-100); margin-bottom: 12px; font-size: 14px; }
+.notice.danger { background: #fdf3f2; border-color: #f4d0cc; color: var(--danger); }
+.notice a { font-weight: 600; }
+.role-list { display: flex; flex-direction: column; gap: 6px; }
+.role-item { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; padding: 10px 12px;
+  background: #fff; color: var(--text); border: 1px solid var(--line); box-shadow: none; font-weight: 400; }
+.role-item:hover { background: var(--blue-50); border-color: var(--blue-300); filter: none; transform: none; box-shadow: none; }
+.role-item.active { background: var(--grad-brand); color: #fff; border-color: transparent; }
+.role-item.active .small { color: rgba(255, 255, 255, .7); }
+@media (max-width: 860px) { .split[style*="280px"] { grid-template-columns: 1fr !important; } }

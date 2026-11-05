@@ -1,5 +1,12 @@
-import { state, esc, money, moneyByCurrency, today, fmtDate, opt, clientProjectCell, yesNo, currencyOptions } from '../core.js';
+import { state, seeOthers, esc, money, moneyByCurrency, today, fmtDate, opt, clientProjectCell, yesNo, currencyOptions } from '../core.js';
 import { entryPage, footerCells } from '../components/entry-page.js';
+
+// Onay durumu; reddedilmişse gerekçe de gösterilir
+const STATUS = { pending: ['Onay bekliyor', 'warn'], approved: ['Onaylandı', ''], rejected: ['Reddedildi', 'danger'] };
+const statusBadge = (r) => {
+  const [label, cls] = STATUS[r.status] || STATUS.approved;
+  return `<span class="badge ${cls}">${label}</span>${r.status === 'rejected' && r.review_note ? `<div class="small">${esc(r.review_note)}</div>` : ''}`;
+};
 
 const sumBy = (rows, fn) => {
   const t = {};
@@ -20,6 +27,7 @@ export function pageExpenses() {
     title: 'Masraflar',
     newTitle: 'Yeni masraf',
     editTitle: 'Masrafı düzenle',
+    module: 'expenses',
     endpoint: '/api/expenses',
     fields: ({ target, user }) => `
       <label>Tarih<input type="date" name="date" required></label>
@@ -42,13 +50,14 @@ export function pageExpenses() {
     toForm: (r) => ({ ...r, amount: String(r.amount).replace('.', ',') }),
     columns: [
       { h: 'Tarih', v: (r) => fmtDate(r.date) },
-      { h: 'Kullanıcı', admin: true, v: (r) => esc(r.user_name) },
+      { h: 'Kullanıcı', show: () => seeOthers('expenses'), v: (r) => esc(r.user_name) },
       { h: 'Müşteri / Proje', v: clientProjectCell },
       { h: 'Kategori', v: (r) => esc(r.category) },
       { h: 'Açıklama', v: (r) => esc(r.description) },
       { h: 'Tutar', key: 'amount', cls: 'num', v: (r) => money(r.amount, r.currency) },
       { h: 'KDV', key: 'vat', cls: 'num', v: (r) => `${money(r.amount * r.vat_rate / 100, r.currency)} <span class="small">%${r.vat_rate}</span>` },
       { h: 'Yansıtılır', v: (r) => yesNo(r.billable) },
+      { h: 'Durum', v: statusBadge },
     ],
     footer: (rows, cols) => footerCells(cols, {
       amount: moneyByCurrency(sumBy(rows, (r) => r.amount)),

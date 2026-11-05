@@ -1,6 +1,6 @@
 // Aktivite Listesi ekranı: günlük liste, haftalık çizelge (hücreden giriş) ve aylık takvim.
 // Rota: #/efor/gun | #/efor/hafta | #/efor/ay
-import { state, isAdmin, $, main, api, toast, esc, hrs, today, fmtDate, addDays, weekStart, dayShort, dayName, isWeekend,
+import { state, can, seeOthers, editOthers, $, main, api, toast, esc, hrs, today, fmtDate, addDays, weekStart, dayShort, dayName, isWeekend,
   monthLabel, addMonths, monthEnd, opt, clientProjectCell, companyLabel, yesNo, HOURS_PER_DAY } from '../core.js';
 import { openEntryDialog } from '../components/entry-dialog.js';
 
@@ -21,7 +21,7 @@ const targetKey = (r) => `${r.company_id}|${r.project_id ?? ''}`;
 export function pageEffort(param) {
   const v = VIEWS[param] ? param : 'hafta';
   if (view.userId === null) view.userId = String(state.user.id);
-  const teamMode = isAdmin() && view.userId === '';
+  const teamMode = seeOthers('activities') && view.userId === '';
   const range = rangeOf(v, view.date);
 
   main.innerHTML = `<h1>Aktivite Listesi</h1>
@@ -34,9 +34,10 @@ export function pageEffort(param) {
           <button type="button" class="secondary" data-next aria-label="Sonraki">›</button>
           <b data-label>${label(v, range)}</b>
         </div>
-        ${isAdmin() ? `<label class="inline">Kişi <select data-user><option value="">Tüm ekip</option>${state.users.filter((u) => u.active).map((u) => opt(u.id, u.full_name, view.userId)).join('')}</select></label>` : ''}
+        ${seeOthers('activities') ? `<label class="inline">Kişi <select data-user><option value="">Tüm ekip</option>${state.users.filter((u) => u.active).map((u) => opt(u.id, u.full_name, view.userId)).join('')}</select></label>` : ''}
       </div>
       ${teamMode && v !== 'ay' ? '<p class="hint">Tüm ekip görünümünde yalnızca okunur; giriş için bir kişi seçin.</p>' : ''}
+      <div data-approval></div>
       <div data-body><div class="empty">Yükleniyor…</div></div>
     </section>`;
 
@@ -51,7 +52,7 @@ export function pageEffort(param) {
 
 async function load(v, [from, to], teamMode) {
   const params = new URLSearchParams({ from, to });
-  if (isAdmin() && view.userId) params.set('user_id', view.userId);
+  if (seeOthers('activities') && view.userId) params.set('user_id', view.userId);
   let rows;
   let holidays;
   try {
@@ -59,11 +60,73 @@ async function load(v, [from, to], teamMode) {
   } catch (err) { return toast(err.message, true); }
   const hol = new Map(holidays.map((h) => [h.date, h]));
   const refresh = () => pageEffort(v);
-  const open = (date, target) => !teamMode && openEntryDialog({ date, target, userId: Number(view.userId || state.user.id), onChange: refresh });
+  const userId = Number(view.userId || state.user.id);
+  // Başkasının kayıtlarına giriş yalnızca "tüm kayıtları düzenleme" yetkisiyle
+  let readOnly = teamMode || (userId !== state.user.id && !editOthers('activities'));
+  if (v !== 'ay' && !teamMode) {
+    try {
+      const week = await api('GET', `/api/timesheets/week?week_start=${weekStart(from)}&user_id=${userId}`);
+      readOnly = readOnly || weekLocked(week);
+      renderApproval(week, userId, refresh);
+    } catch (err) { toast(err.message, true); }
+  }
+  const open = (date, target) => !readOnly && openEntryDialog({ date, target, userId, onChange: refresh });
   const body = $('[data-body]');
-  if (v === 'gun') renderDay(body, rows, from, hol, open, teamMode);
-  else if (v === 'hafta') renderWeek(body, rows, days(from, to), hol, open, teamMode);
+  if (v === 'gun') renderDay(body, rows, from, hol, open, readOnly);
+  else if (v === 'hafta') renderWeek(body, rows, days(from, to), hol, open, readOnly);
   else renderMonth(body, rows, from, to, hol);
+}
+
+// Hafta kilitli mi: ay kapalı, onaylanmış ya da (onay yetkisi yoksa) onaya gönderilmiş
+const weekLocked = (w) => w.month_closed || w.status === 'approved' || (w.status === 'submitted' && !can('activities.approve'));
+
+const WEEK_STATUS = {
+  draft: ['Taslak', 'off', 'Bu hafta henüz onaya gönderilmedi.'],
+  submitted: ['Onay bekliyor', 'warn', 'Hafta onaya gönderildi.'],
+  approved: ['Onaylandı', '', 'Hafta onaylandı ve kilitlendi.'],
+  rejected: ['Geri gönderildi', 'danger', 'Hafta düzeltme için geri gönderildi.'],
+};
+
+// Haftalık onay şeridi: durum + kişinin/onaylayanın yapabileceği işlemler
+function renderApproval(w, userId, refresh) {
+  const box = $('[data-approval]');
+  const mine = userId === state.user.id;
+  const approver = can('activities.approve') && w.timesheet;
+  const [label, cls, text] = WEEK_STATUS[w.status];
+  const who = w.timesheet?.reviewer_name ? ` · ${esc(w.timesheet.reviewer_name)}` : '';
+  const actions = [];
+  if (!w.month_closed) {
+    if (mine && ['draft', 'rejected'].includes(w.status)) actions.push('<button type="button" data-ts="submit">Haftayı onaya gönder</button>');
+    if (mine && w.status === 'submitted') actions.push('<button type="button" class="secondary" data-ts="withdraw">Geri çek</button>');
+    if (approver && w.status === 'submitted') actions.push('<button type="button" data-ts="approve">Onayla</button><button type="button" class="secondary" data-ts="reject">Geri gönder</button>');
+    if (approver && w.status === 'approved') actions.push('<button type="button" class="secondary" data-ts="reopen">Yeniden aç</button>');
+  }
+  box.innerHTML = `<div class="approval-bar ${cls}">
+    <div><span class="badge ${cls}">${w.month_closed ? 'Ay kapalı' : label}</span>
+      <span class="small">${w.month_closed ? 'Bu ay kapatıldı; kayıtlar değiştirilemez.' : text}${who}
+      · ${hrs(w.hours)} saat (${hrs(w.hours / HOURS_PER_DAY)} adam-gün)</span>
+      ${w.status === 'rejected' && w.timesheet?.note ? `<div class="reject-note">Gerekçe: ${esc(w.timesheet.note)}</div>` : ''}</div>
+    <div class="actions">${actions.join('')}</div></div>`;
+  box.onclick = async (e) => {
+    const b = e.target.closest('[data-ts]');
+    if (!b) return;
+    const act = b.dataset.ts;
+    try {
+      if (act === 'submit') await api('POST', '/api/timesheets/submit', { week_start: w.week_start });
+      else if (act === 'withdraw') await api('POST', '/api/timesheets/withdraw', { week_start: w.week_start });
+      else if (act === 'approve') await api('POST', `/api/timesheets/${w.timesheet.id}/review`, { decision: 'approved' });
+      else if (act === 'reject') {
+        const note = prompt('Geri gönderme gerekçesi:');
+        if (!note) return;
+        await api('POST', `/api/timesheets/${w.timesheet.id}/review`, { decision: 'rejected', note });
+      } else if (act === 'reopen') {
+        if (!confirm('Onaylanmış hafta yeniden düzenlemeye açılsın mı?')) return;
+        await api('POST', `/api/timesheets/${w.timesheet.id}/reopen`);
+      }
+      toast('Güncellendi');
+      refresh();
+    } catch (err) { toast(err.message, true); }
+  };
 }
 
 function renderDay(body, rows, date, hol, open, teamMode) {
@@ -74,8 +137,8 @@ function renderDay(body, rows, date, hol, open, teamMode) {
     <div class="card-head"><div class="small">${hrs(total)} saat · ${hrs(total / HOURS_PER_DAY)} adam-gün</div>
       <button type="button" data-add>+ Efor ekle</button></div>
     ${rows.length ? `<div class="table-wrap"><table>
-      <thead><tr>${isAdmin() ? '<th>Kişi</th>' : ''}<th>Müşteri / Proje</th><th>Açıklama</th><th class="num">Saat</th><th>Fatura</th><th></th></tr></thead>
-      <tbody>${rows.map((r) => `<tr>${isAdmin() ? `<td>${esc(r.user_name)}</td>` : ''}<td>${clientProjectCell(r)}</td><td>${esc(r.description)}</td>
+      <thead><tr>${seeOthers('activities') ? '<th>Kişi</th>' : ''}<th>Müşteri / Proje</th><th>Açıklama</th><th class="num">Saat</th><th>Fatura</th><th></th></tr></thead>
+      <tbody>${rows.map((r) => `<tr>${seeOthers('activities') ? `<td>${esc(r.user_name)}</td>` : ''}<td>${clientProjectCell(r)}</td><td>${esc(r.description)}</td>
         <td class="num">${hrs(r.hours)}</td><td>${yesNo(r.billable)}</td><td class="num"><button class="link" data-open="${r.id}">Aç</button></td></tr>`).join('')}</tbody>
     </table></div>` : '<div class="empty">Bu gün için kayıt yok.</div>'}`;
   const add = body.querySelector('[data-add]');
@@ -167,4 +230,11 @@ function renderMonth(body, rows, from, to, hol) {
     view.date = b.dataset.day;
     location.hash = '#/efor/gun';
   };
+}
+
+// Başka ekrandan belirli bir kişinin haftasını açmak için (örn. Onaylar)
+export function showWeek(userId, date) {
+  view.userId = String(userId);
+  view.date = date;
+  location.hash = '#/efor/hafta';
 }

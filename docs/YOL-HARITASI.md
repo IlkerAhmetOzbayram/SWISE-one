@@ -16,6 +16,10 @@ Her faz ayrı bir dalda (`faz-N/...`) geliştirilir, test edilir, onaylandıktan
 | Aylık plan | Müşteri bazında adam-gün (isteğe bağlı şirket/proje kırılımı) |
 | İş günü | Pazartesi–Cuma, resmi tatiller ve şirket izinleri düşülür; arife yarım gün |
 | Mail ile paylaşım | Şimdilik raporlar indirilip elle gönderilir; otomatik gönderim Faz 6 |
+| Proje Yöneticisi | Müşteriye sorumlu olarak atanır; o müşterinin tüm eforunu ve raporunu görür, ücret/maaş görmez |
+| Onay akışları | Masraf onayı; haftalık efor onayı (gönder → onayla/geri gönder); ay kapanışı (kilit, yalnızca Yönetici yeniden açar) |
+| Hassas personel bilgileri | Maaş geçmişi, IBAN, acil durum kişisi (TCKN tutulmaz); görüntüleme işlem kaydına yazılır |
+| Roller | 4 hazır rol (Yönetici kilitli) + özel rol; modül × işlem yetki matrisi, kapsam: kendi / sorumlu olduğu / tümü |
 | Ücret | Müşteri ücreti günlük girilir; 1 gün = 8 saat |
 | Müşteri yapısı | Müşteri (grup) → Şirket (fatura birimi) → Proje. Ücret önceliği proje → şirket → müşteri |
 | Fatura bilgileri | Şirkette tutulur (her şirket ayrı tüzel kişi) |
@@ -30,7 +34,7 @@ Her faz ayrı bir dalda (`faz-N/...`) geliştirilir, test edilir, onaylandıktan
 | 0 | Altyapı: modüler yapı, veritabanı geçişleri, işlem kaydı, otomatik yedek, bulut güvenliği, testler | ✅ Tamamlandı (04.11.2026) |
 | 1 | Müşteri yapısı: müşteri → şirket → proje, fatura bilgileri, iletişim kişileri, günlük ücret (8 saat), para birimi, ödeme vadesi, KDV muafiyeti | ✅ Tamamlandı (04.11.2026) |
 | 2 | Aktivite ve raporlama: ana sayfa, efor ekranı (günlük/haftalık çizelge/aylık takvim), müşteri efor raporu + Excel, tatil listesi, aylık müşteri planı ve bütçe tahmini | ✅ Tamamlandı (04.11.2026) |
-| 3 | Personel, yönetim, yetkilendirme: personel kartı, roller, yetki matrisi, KVKK | ⏳ |
+| 3 | Personel, yönetim, yetkilendirme: personel kartı, maaş geçmişi, hassas bilgiler, 4 hazır rol + özel rol, yetki matrisi, masraf onayı, haftalık efor onayı, ay kapanışı, KVKK | ✅ Tamamlandı — onay bekliyor |
 | 4 | Teklif: şablon, hazırlama, PDF, e-imza (token/mobil), mail ile gönderim, arşiv, durum takibi | ⏳ |
 | 5 | Muhasebe: gelir/gider hareketleri, gelen/giden fatura, cari bakiye, personel cari (maaş, SGK, avans), aylık bütçe raporu | ⏳ |
 | 6 | Entegrasyonlar: Microsoft 365 mail, e-imza servisi, e-fatura entegratörü, banka hareketleri, bulut kurulumu | ⏳ |

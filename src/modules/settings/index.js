@@ -1,8 +1,8 @@
 // Şirket ve vergi ayarları
 const express = require('express');
 const { all, run, tx } = require('../../db');
-const { str, num } = require('../../lib/validate');
-const { auth, admin } = require('../../lib/auth');
+const { str, num, flag } = require('../../lib/validate');
+const { auth, requirePerm } = require('../../lib/auth');
 const audit = require('../../lib/audit');
 
 const router = express.Router();
@@ -11,13 +11,15 @@ const getSettings = () => Object.fromEntries(all('SELECT key, value FROM setting
 
 router.get('/api/settings', auth, (req, res) => res.json(getSettings()));
 
-router.put('/api/settings', auth, admin, (req, res) => {
+router.put('/api/settings', auth, requirePerm('settings.edit'), (req, res) => {
   const b = req.body;
   const values = {
     company_name: str(b.company_name, 'Şirket adı'),
     vat_rate: String(num(b.vat_rate, 'KDV oranı')),
     withholding_rate: String(num(b.withholding_rate, 'Stopaj oranı')),
     expense_categories: str(b.expense_categories, 'Masraf kategorileri'),
+    // Personel kendi maaş geçmişini görebilir mi
+    show_own_salary: flag(b.show_own_salary) ? '1' : '0',
   };
   tx(() => {
     const before = getSettings();

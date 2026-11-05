@@ -2,15 +2,19 @@
 // Müşteriye gönderilmek üzere hazırlanır; ücret ve tutar içermez.
 const ExcelJS = require('exceljs');
 const { one, all } = require('../../db');
-const { bad } = require('../../lib/http');
+const { bad, HttpError } = require('../../lib/http');
+const { can } = require('../../lib/auth');
 const { num, date, r2 } = require('../../lib/validate');
 const { HOURS_PER_DAY } = require('../activities');
 
 function buildEffortReport(req) {
   const q = req.query;
   const customerId = num(q.customer_id, 'Müşteri');
-  const customer = one('SELECT id, name FROM customers WHERE id = ?', customerId);
+  const customer = one('SELECT id, name, manager_id FROM customers WHERE id = ?', customerId);
   if (!customer) bad('Müşteri bulunamadı');
+  // Proje yöneticisi yalnızca sorumlu olduğu müşterinin raporunu alabilir
+  if (can(req, 'effort_report.view') !== 'all' && customer.manager_id !== req.user.id) throw new HttpError(403, 'Bu müşterinin raporunu görme yetkiniz yok');
+  delete customer.manager_id;
   const where = ['co.customer_id = ?'];
   const params = [customerId];
   if (q.from) { where.push('a.date >= ?'); params.push(date(q.from, 'Başlangıç')); }

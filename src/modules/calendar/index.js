@@ -3,7 +3,7 @@ const express = require('express');
 const { all, run, tx } = require('../../db');
 const { HttpError, bad } = require('../../lib/http');
 const { str, date } = require('../../lib/validate');
-const { auth, admin } = require('../../lib/auth');
+const { auth, requirePerm } = require('../../lib/auth');
 const { holidayMap, businessDays } = require('../../lib/workdays');
 const audit = require('../../lib/audit');
 
@@ -25,7 +25,7 @@ router.get('/api/workdays', auth, (req, res) => {
 
 const fields = (b) => [date(b.date), str(b.name, 'Açıklama'), b.kind === 'half' ? 'half' : 'full'];
 
-router.post('/api/holidays', auth, admin, (req, res) => {
+router.post('/api/holidays', auth, requirePerm('settings.edit'), (req, res) => {
   const id = tx(() => {
     const { lastInsertRowid } = run('INSERT INTO holidays (date, name, kind) VALUES (?, ?, ?)', ...fields(req.body));
     audit.logCreate(req, 'holidays', Number(lastInsertRowid));
@@ -34,7 +34,7 @@ router.post('/api/holidays', auth, admin, (req, res) => {
   res.json({ id });
 });
 
-router.put('/api/holidays/:id', auth, admin, (req, res) => {
+router.put('/api/holidays/:id', auth, requirePerm('settings.edit'), (req, res) => {
   const before = audit.snapshot('holidays', Number(req.params.id));
   if (!before) throw new HttpError(404, 'Kayıt bulunamadı');
   tx(() => {
@@ -44,7 +44,7 @@ router.put('/api/holidays/:id', auth, admin, (req, res) => {
   res.json({ ok: true });
 });
 
-router.delete('/api/holidays/:id', auth, admin, (req, res) => {
+router.delete('/api/holidays/:id', auth, requirePerm('settings.edit'), (req, res) => {
   const before = audit.snapshot('holidays', Number(req.params.id));
   if (!before) throw new HttpError(404, 'Kayıt bulunamadı');
   tx(() => {

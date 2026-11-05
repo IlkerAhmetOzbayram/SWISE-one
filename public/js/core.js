@@ -1,7 +1,12 @@
 // Ortak durum ve yardımcılar
 
 export const state = { user: null, settings: {}, customers: [], companies: [], projects: [], users: [] };
-export const isAdmin = () => state.user?.role === 'admin';
+// Yetki yardımcıları (sunucu da aynı kuralları uygular; arayüz yalnızca gösterilecekleri seçer)
+export const can = (key) => state.user?.perms?.[key];
+export const seeOthers = (module) => !!can(`${module}.view`) && can(`${module}.view`) !== 'own';
+export const editOthers = (module) => can(`${module}.edit`) === 'all';
+export const seeRates = () => !!can('rates.view');
+export const isAdmin = () => !!can('roles.edit');
 export const $ = (sel, root = document) => root.querySelector(sel);
 export const main = $('#main');
 

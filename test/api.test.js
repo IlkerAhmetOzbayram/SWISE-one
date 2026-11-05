@@ -19,7 +19,7 @@ before(async () => {
   admin = client(srv.base);
   ayse = client(srv.base);
 
-  assert.equal((await admin('POST', '/api/setup', { company_name: 'Test AŞ', full_name: 'Yönetici', username: 'admin', password: 'secret1' })).status, 200);
+  assert.equal((await admin('POST', '/api/setup', { company_name: 'Test AŞ', full_name: 'Yönetici', username: 'admin', password: 'secret123' })).status, 200);
 
   // Acme Holding: günlük 16.000 TL; ilk şirket otomatik (stopajlı), ikinci şirket kendi ücretiyle (24.000)
   const acme = (await admin('POST', '/api/customers', {
@@ -39,7 +39,7 @@ before(async () => {
   ids.ozel = await project(ids.enerji, 'Özel Proje', { daily_rate: '20000' });
   ids.depo = await project(ids.lojistik, 'Depo Sistemi');
   ids.eu = await project(ids.globalCo, 'EU Rollout');
-  ids.ayse = (await admin('POST', '/api/users', { full_name: 'Ayşe Çalışan', username: 'ayse', password: 'secret2', role: 'user' })).data.id;
+  ids.ayse = (await admin('POST', '/api/users', { full_name: 'Ayşe Çalışan', username: 'ayse', password: 'secret234', role: 'user' })).data.id;
 
   ids.act1 = (await admin('POST', '/api/activities', activity(ids.web, 4))).data.id;           // 4/8 × 16000 = 8000 TRY
   await admin('POST', '/api/activities', activity(ids.ozel, 2));                                // 2/8 × 20000 = 5000 TRY
@@ -48,14 +48,14 @@ before(async () => {
   await admin('POST', '/api/expenses', { date: '2026-11-02', company_id: ids.enerji, project_id: ids.web, category: 'Ulaşım', amount: '500', currency: 'TRY', vat_rate: '20', billable: true });
   await admin('POST', '/api/expenses', { date: '2026-11-02', company_id: ids.globalCo, project_id: ids.eu, category: 'Konaklama', amount: '100', currency: 'EUR', vat_rate: '0', billable: true });
 
-  assert.equal((await ayse('POST', '/api/login', { username: 'ayse', password: 'secret2' })).status, 200);
+  assert.equal((await ayse('POST', '/api/login', { username: 'ayse', password: 'secret234' })).status, 200);
   ids.ayseAct = (await ayse('POST', '/api/activities', activity(ids.depo, 8))).data.id;     // 8/8 × 24000 = 24000 TRY
 });
 
 after(() => srv.close());
 
 test('kurulum yalnızca bir kez yapılabilir', async () => {
-  const r = await admin('POST', '/api/setup', { full_name: 'X', username: 'x', password: 'secret9' });
+  const r = await admin('POST', '/api/setup', { full_name: 'X', username: 'x', password: 'secret999' });
   assert.equal(r.status, 400);
 });
 
@@ -259,8 +259,8 @@ test('seçilen proje başka şirkete aitse kayıt reddedilir', async () => {
 
 test('çalışan başkası adına kayıt giremez; kaydı giren kullanıcı yazılır', async () => {
   const user = client(srv.base);
-  await admin('POST', '/api/users', { full_name: 'Zeynep', username: 'zeynep', password: 'secret3' });
-  await user('POST', '/api/login', { username: 'zeynep', password: 'secret3' });
+  await admin('POST', '/api/users', { full_name: 'Zeynep', username: 'zeynep', password: 'secret345' });
+  await user('POST', '/api/login', { username: 'zeynep', password: 'secret345' });
   const me = (await user('GET', '/api/me')).data;
   const id = (await user('POST', '/api/activities', activity(ids.web, 1, { user_id: 1 }))).data.id;
   const a = (await admin('GET', '/api/activities')).data.find((x) => x.id === id);

@@ -14,7 +14,7 @@ before(async () => {
   srv = await startServer();
   admin = client(srv.base);
   ayse = client(srv.base);
-  await admin('POST', '/api/setup', { full_name: 'Yönetici', username: 'admin', password: 'secret1' });
+  await admin('POST', '/api/setup', { full_name: 'Yönetici', username: 'admin', password: 'secret123' });
   const abc = (await admin('POST', '/api/customers', { name: 'ABC Holding', daily_rate: '16000', currency: 'TRY', company_name: 'ABC Enerji' })).data;
   ids.abc = abc.id;
   ids.enerji = abc.company_id;
@@ -23,8 +23,8 @@ before(async () => {
   const eu = (await admin('POST', '/api/customers', { name: 'Global GmbH', daily_rate: '800', currency: 'EUR' })).data;
   ids.eu = eu.id;
   ids.euCo = eu.company_id;
-  ids.ayse = (await admin('POST', '/api/users', { full_name: 'Ayşe', username: 'ayse', password: 'secret2' })).data.id;
-  await ayse('POST', '/api/login', { username: 'ayse', password: 'secret2' });
+  ids.ayse = (await admin('POST', '/api/users', { full_name: 'Ayşe', username: 'ayse', password: 'secret234' })).data.id;
+  await ayse('POST', '/api/login', { username: 'ayse', password: 'secret234' });
 
   // Kasım 2026: ilk hafta
   await admin('POST', '/api/activities', act('2026-11-02', ids.enerji, 8));                                 // 1 gün × 16000

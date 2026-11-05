@@ -27,7 +27,7 @@ export function showSetup(onDone) {
     <label>Şirket adı<input name="company_name" value="SWISE Teknoloji ve Danışmanlık" required></label>
     <label>Ad soyad<input name="full_name" required></label>
     <label>Kullanıcı adı<input name="username" autocomplete="username" required></label>
-    <label>Parola<input type="password" name="password" autocomplete="new-password" minlength="6" required></label>
+    <label>Parola<input type="password" name="password" autocomplete="new-password" minlength="8" required></label>
     <label>Parola (tekrar)<input type="password" name="password2" autocomplete="new-password" required></label>`,
   'Kurulumu tamamla', (d) => {
     if (d.password !== d.password2) throw new Error('Parolalar eşleşmiyor');

@@ -1,5 +1,5 @@
 // Ana sayfa: kişinin bu hafta/bu ay eforu, eksik efor girilen günler; yöneticiye bütçe ve ekip özeti
-import { state, isAdmin, main, api, toast, esc, money, hrs, pct, fmtDate, dayShort, dayName, monthLabel, HOURS_PER_DAY } from '../core.js';
+import { state, can, main, api, toast, esc, money, hrs, pct, fmtDate, dayShort, dayName, monthLabel, HOURS_PER_DAY } from '../core.js';
 import { openEntryDialog } from '../components/entry-dialog.js';
 
 export async function pageHome() {
@@ -21,6 +21,7 @@ export async function pageHome() {
       ${stat('Eksik gün', me.missing.length, me.missing.length ? 'efor girilmemiş iş günü' : 'her şey tamam')}
     </div>
 
+    ${notices(d)}
     <div class="split">
       <section class="card">
         <div class="card-head"><h2>Bu hafta</h2><a href="#/efor/hafta">Haftalık çizelge →</a></div>
@@ -39,7 +40,7 @@ export async function pageHome() {
       </section>
     </div>
 
-    ${isAdmin() ? `
+    ${d.budget ? `
     <section class="card">
       <div class="card-head"><h2>Bütçe · ${monthLabel(d.month)}</h2><a href="#/butce">Bütçe ekranı →</a></div>
       ${d.budget.length ? `<div class="budget-cards">${d.budget.map((b) => `<div class="budget-card">
@@ -50,21 +51,37 @@ export async function pageHome() {
         ${b.forecast_pct == null ? '' : `<div class="progress"><span style="width:${Math.min(100, Math.round(b.forecast_pct * 100))}%" class="${b.forecast_pct >= 1 ? 'over' : ''}"></span></div>
           <div class="small">Tahmin / plan: ${pct(b.forecast_pct)}</div>`}
       </div>`).join('')}</div>` : '<div class="empty">Bu ay için plan veya faturalanabilir efor yok.</div>'}
-    </section>
-    <div class="split">
-      <section class="card"><h2>En çok çalışılan müşteriler</h2>
+    </section>` : ''}
+    ${d.top_customers || d.team ? `<div class="split">
+      ${d.top_customers ? `<section class="card"><h2>En çok çalışılan müşteriler</h2>
         ${d.top_customers.length ? `<table><thead><tr><th>Müşteri</th><th class="num">Saat</th><th class="num">Adam-gün</th></tr></thead>
           <tbody>${d.top_customers.map((c) => `<tr><td><a href="#/musteriler/${c.id}">${esc(c.name)}</a></td><td class="num">${hrs(c.hours)}</td><td class="num">${hrs(c.days)}</td></tr>`).join('')}</tbody></table>`
-          : '<div class="empty">Bu ay kayıt yok.</div>'}</section>
-      <section class="card"><h2>Ekip</h2>
+          : '<div class="empty">Bu ay kayıt yok.</div>'}</section>` : ''}
+      ${d.team ? `<section class="card"><h2>Ekip</h2>
         ${d.team.length ? `<table><thead><tr><th>Kişi</th><th class="num">Bu ay saat</th><th class="num">Eksik gün</th></tr></thead>
           <tbody>${d.team.map((u) => `<tr><td>${esc(u.full_name)}</td><td class="num">${hrs(u.month_hours)}</td>
             <td class="num">${u.missing ? `<span class="neg">${u.missing}</span>` : '0'}</td></tr>`).join('')}</tbody></table>`
-          : '<div class="empty">Henüz ekip üyesi eklenmedi.</div>'}</section>
+          : '<div class="empty">Henüz ekip üyesi eklenmedi.</div>'}</section>` : ''}
     </div>` : ''}`;
 
   main.onclick = (e) => {
     const b = e.target.closest('[data-day]');
     if (b) openEntryDialog({ date: b.dataset.day, onChange: pageHome });
   };
+}
+
+// Bildirimler: bekleyen onaylar (onaylayana), geri gönderilen hafta/masraflar ve bu haftanın durumu (herkese)
+function notices(d) {
+  const out = [];
+  const me = d.me;
+  if (d.pending_weeks) out.push(`<div class="notice">${d.pending_weeks} hafta onayınızı bekliyor. <a href="#/onaylar/hafta">Onaylara git →</a></div>`);
+  if (d.pending_expenses) out.push(`<div class="notice">${d.pending_expenses} masraf onayınızı bekliyor. <a href="#/onaylar/masraf">Onaylara git →</a></div>`);
+  for (const w of me.rejected_weeks) {
+    out.push(`<div class="notice danger">${fmtDate(w.week_start)} haftanız düzeltme için geri gönderildi${w.note ? `: “${esc(w.note)}”` : ''}. <a href="#/efor/hafta">Düzelt →</a></div>`);
+  }
+  if (me.rejected_expenses) out.push(`<div class="notice danger">${me.rejected_expenses} masrafınız reddedildi. <a href="#/masraflar">Masraflara git →</a></div>`);
+  if (can('activities.edit') && me.week_status.status === 'draft' && new Date().getDay() === 5) {
+    out.push('<div class="notice">Bugün Cuma: haftanızı tamamlayıp onaya göndermeyi unutmayın. <a href="#/efor/hafta">Aktivite Listesi →</a></div>');
+  }
+  return out.join('');
 }

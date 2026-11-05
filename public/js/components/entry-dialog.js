@@ -1,5 +1,5 @@
 // Bir günün aktivitelerini görme/ekleme/düzenleme penceresi (Aktivite Listesi ve ana sayfa kullanır)
-import { state, isAdmin, api, toast, esc, hrs, fmtDate, dayName, formToObj, parseHours, userOptions, clientProjectCell, yesNo } from '../core.js';
+import { state, seeOthers, editOthers, api, toast, esc, hrs, fmtDate, dayName, formToObj, parseHours, userOptions, clientProjectCell, yesNo } from '../core.js';
 import { targetFields, setTarget, bindTarget } from './target-select.js';
 
 const sameTarget = (r, t) => String(r.company_id) === String(t.company_id) && String(r.project_id ?? '') === String(t.project_id ?? '');
@@ -16,7 +16,7 @@ export function openEntryDialog({ date, target = null, userId = state.user.id, o
       ${targetFields()}
       <label>Süre (saat)<input name="hours" placeholder="1,5 veya 1:30" inputmode="decimal" required></label>
       <label class="full">Açıklama<input name="description" placeholder="Ne üzerinde çalışıldı?" required></label>
-      ${isAdmin() ? `<label>Kullanıcı<select name="user_id">${userOptions(userId)}</select></label>` : ''}
+      ${editOthers('activities') ? `<label>Kullanıcı<select name="user_id">${userOptions(userId)}</select></label>` : ''}
       <label class="check"><input type="checkbox" name="billable" checked> Faturalanabilir</label>
       <div class="actions"><button type="submit" data-submit>Ekle</button><button type="button" class="secondary" data-reset hidden>Vazgeç</button></div>
     </form>`;
@@ -30,7 +30,7 @@ export function openEntryDialog({ date, target = null, userId = state.user.id, o
     form.reset();
     form.elements.namedItem('_id').value = '';
     form.elements.namedItem('billable').checked = true;
-    if (isAdmin()) form.elements.namedItem('user_id').value = userId;
+    if (editOthers('activities')) form.elements.namedItem('user_id').value = userId;
     setTarget(form, target || {});
     submit.textContent = 'Ekle';
     resetBtn.hidden = true;
@@ -38,7 +38,7 @@ export function openEntryDialog({ date, target = null, userId = state.user.id, o
 
   async function load() {
     const params = new URLSearchParams({ from: date, to: date });
-    if (isAdmin()) params.set('user_id', userId);
+    if (seeOthers('activities')) params.set('user_id', userId);
     try {
       rows = (await api('GET', `/api/activities?${params}`)).filter((r) => !target || sameTarget(r, target));
     } catch (err) { return toast(err.message, true); }
@@ -61,7 +61,7 @@ export function openEntryDialog({ date, target = null, userId = state.user.id, o
       form.elements.namedItem('hours').value = hrs(r.hours);
       form.elements.namedItem('description').value = r.description;
       form.elements.namedItem('billable').checked = !!r.billable;
-      if (isAdmin()) form.elements.namedItem('user_id').value = r.user_id;
+      if (editOthers('activities')) form.elements.namedItem('user_id').value = r.user_id;
       submit.textContent = 'Güncelle';
       resetBtn.hidden = false;
     } else if (del && confirm('Bu kayıt silinsin mi?')) {

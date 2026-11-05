@@ -1,18 +1,23 @@
 // Müşteriler: liste (#/musteriler) ve müşteri detayı (#/musteriler/:id)
 // Detayda: genel bilgiler, şirketler, iletişim kişileri, projeler
-import { state, $, main, api, toast, esc, money, opt, yesNo, formToObj, fillForm, loadRefs, currencyOptions, CURRENCY_LABELS, HOURS_PER_DAY } from '../core.js';
+import { state, can, $, main, api, toast, esc, money, opt, yesNo, formToObj, fillForm, loadRefs, currencyOptions, CURRENCY_LABELS, HOURS_PER_DAY } from '../core.js';
 import { adminCrud } from '../components/admin-crud.js';
 
-const dayRate = (v, currency) => `${money(v, currency)} <span class="small">/gün · ${money(v / HOURS_PER_DAY, currency)}/sa</span>`;
+// Sorumlu proje yöneticisi seçimi (aktif personel)
+const managerOptions = (selected) => `<option value="">— Yok —</option>${state.users.filter((u) => u.active && u.username !== 'yerel').map((u) => opt(u.id, u.full_name, selected)).join('')}`;
+const editable = () => !!can('customers.edit');
+
+const dayRate = (v, currency) => (v == null ? '<span class="small">—</span>'
+  : `${money(v, currency)} <span class="small">/gün · ${money(v / HOURS_PER_DAY, currency)}/sa</span>`);
 // Kendi değeri yoksa devraldığı değer gri ve "nereden" bilgisiyle gösterilir
-const inheritedRate = (own, effective, currency, source) =>
-  (own != null ? money(own, currency) : `<span class="inherited">${money(effective, currency)} · ${source}</span>`);
+const inheritedRate = (own, effective, currency, source) => (effective === undefined && own === undefined ? '<span class="small">—</span>' :
+  (own != null ? money(own, currency) : `<span class="inherited">${money(effective, currency)} · ${source}</span>`));
 
 export function pageCustomers(param) {
   if (param) return pageCustomer(Number(param));
 
   main.innerHTML = `<div class="card-head"><h1 style="margin:0">Müşteriler</h1>
-      <button type="button" data-new>+ Yeni müşteri</button></div>
+      ${editable() ? '<button type="button" data-new>+ Yeni müşteri</button>' : ''}</div>
     <section class="card" data-new-card hidden>
       <h2>Yeni müşteri</h2>
       <form class="grid" data-new-form>
@@ -20,7 +25,8 @@ export function pageCustomers(param) {
         <label>Günlük ücret<input name="daily_rate" inputmode="decimal" placeholder="1 gün = ${HOURS_PER_DAY} saat" required></label>
         <label>Para birimi<select name="currency">${currencyOptions('TRY')}</select></label>
         <label>Ödeme vadesi (gün)<input name="payment_days" inputmode="numeric" value="30"></label>
-        <label class="full">Notlar<input name="notes"></label>
+        <label class="wide">Sorumlu proje yöneticisi<select name="manager_id">${managerOptions()}</select></label>
+        <label class="wide">Notlar<input name="notes"></label>
         <h3 class="full form-section">İlk şirketin fatura bilgileri</h3>
         <p class="hint full" style="margin:-8px 0 0">Müşterinin altında en az bir şirket olur. Başka şirketleri sonradan ekleyebilirsiniz.</p>
         <label class="wide">Şirket unvanı<input name="company_name" placeholder="Boş bırakılırsa müşteri adı kullanılır"></label>
@@ -42,7 +48,7 @@ export function pageCustomers(param) {
 
   const newCard = $('[data-new-card]');
   const newForm = $('[data-new-form]');
-  $('[data-new]').onclick = () => { newCard.hidden = false; newForm.elements.namedItem('name').focus(); };
+  if ($('[data-new]')) $('[data-new]').onclick = () => { newCard.hidden = false; newForm.elements.namedItem('name').focus(); };
   $('[data-cancel]').onclick = () => { newForm.reset(); newCard.hidden = true; };
   newForm.onsubmit = async (e) => {
     e.preventDefault();
@@ -57,9 +63,10 @@ export function pageCustomers(param) {
   const render = (q = '') => {
     const rows = state.customers.filter((c) => c.name.toLocaleLowerCase('tr').includes(q.toLocaleLowerCase('tr')));
     $('[data-list]').innerHTML = rows.length ? `<table>
-      <thead><tr><th>Müşteri</th><th class="num">Şirket</th><th class="num">Günlük ücret</th><th>Para birimi</th><th class="num">Vade</th><th>Durum</th><th></th></tr></thead>
+      <thead><tr><th>Müşteri</th><th>Sorumlu</th><th class="num">Şirket</th><th class="num">Günlük ücret</th><th>Para birimi</th><th class="num">Vade</th><th>Durum</th><th></th></tr></thead>
       <tbody>${rows.map((c) => `<tr class="${c.active ? '' : 'muted'}">
         <td><a href="#/musteriler/${c.id}"><b>${esc(c.name)}</b></a>${c.notes ? `<div class="small">${esc(c.notes)}</div>` : ''}</td>
+        <td>${c.manager_name ? esc(c.manager_name) : '<span class="small">—</span>'}</td>
         <td class="num">${c.company_count}</td><td class="num">${dayRate(c.daily_rate, c.currency)}</td>
         <td>${CURRENCY_LABELS[c.currency]}</td><td class="num">${c.payment_days} gün</td>
         <td>${yesNo(c.active, 'Aktif', 'Pasif')}</td><td class="num"><a href="#/musteriler/${c.id}">Aç →</a></td></tr>`).join('')}</tbody></table>`
@@ -91,9 +98,10 @@ async function pageCustomer(id) {
         <label>Günlük ücret<input name="daily_rate" inputmode="decimal" required></label>
         <label>Para birimi<select name="currency">${currencyOptions(cu.currency)}</select></label>
         <label>Ödeme vadesi (gün)<input name="payment_days" inputmode="numeric"></label>
+        <label class="wide">Sorumlu proje yöneticisi<select name="manager_id">${managerOptions(cu.manager_id)}</select></label>
         <label class="wide">Notlar<input name="notes"></label>
         <label class="check"><input type="checkbox" name="active"> Aktif</label>
-        <div class="actions"><button type="submit">Kaydet</button></div>
+        ${editable() ? '<div class="actions"><button type="submit">Kaydet</button></div>' : ''}
       </form>
       <p class="hint">Şirketler ve projeler kendi ücreti/para birimi/vadesi girilmedikçe buradaki değerleri kullanır.
         Ücret, aktivite girildiği anda kayda sabitlenir; buradaki değişiklik eski kayıtları etkilemez.</p>
@@ -103,7 +111,8 @@ async function pageCustomer(id) {
     <div data-projects></div>`;
 
   const cform = $('[data-customer]');
-  fillForm(cform, { ...cu, daily_rate: String(cu.daily_rate) });
+  fillForm(cform, { ...cu, daily_rate: cu.daily_rate == null ? '' : String(cu.daily_rate), manager_id: cu.manager_id ?? '' });
+  if (!editable()) [...cform.elements].forEach((el) => { el.disabled = true; });
   cform.onsubmit = async (e) => {
     e.preventDefault();
     try {
@@ -115,7 +124,7 @@ async function pageCustomer(id) {
   };
 
   adminCrud($('[data-companies]'), {
-    compact: true, listTitle: 'Şirketler', newTitle: 'Yeni şirket', editTitle: 'Şirketi düzenle', addLabel: 'Şirket ekle',
+    compact: true, readOnly: !editable(), listTitle: 'Şirketler', newTitle: 'Yeni şirket', editTitle: 'Şirketi düzenle', addLabel: 'Şirket ekle',
     intro: 'Fatura bu şirketlere kesilir. Ücret, para birimi ve vade boş bırakılırsa müşteriden alınır.',
     emptyText: 'Şirket yok.', endpoint: '/api/companies', rows: companies, onSaved: rerender,
     fields: () => `
@@ -146,7 +155,7 @@ async function pageCustomer(id) {
   });
 
   adminCrud($('[data-contacts]'), {
-    compact: true, deletable: true, listTitle: 'İletişim kişileri', newTitle: 'Yeni kişi', editTitle: 'Kişiyi düzenle', addLabel: 'Kişi ekle',
+    compact: true, readOnly: !editable(), deletable: true, listTitle: 'İletişim kişileri', newTitle: 'Yeni kişi', editTitle: 'Kişiyi düzenle', addLabel: 'Kişi ekle',
     intro: 'Kişi müşterinin geneline veya belirli bir şirkete bağlanabilir. Teklif ve fatura maillerinde bu işaretler kullanılacak.',
     emptyText: 'Kişi yok.', endpoint: '/api/contacts', rows: () => contacts, onSaved: rerender,
     fields: () => `
@@ -172,7 +181,7 @@ async function pageCustomer(id) {
   });
 
   adminCrud($('[data-projects]'), {
-    compact: true, listTitle: 'Projeler', newTitle: 'Yeni proje', editTitle: 'Projeyi düzenle', addLabel: 'Proje ekle',
+    compact: true, readOnly: !editable(), listTitle: 'Projeler', newTitle: 'Yeni proje', editTitle: 'Projeyi düzenle', addLabel: 'Proje ekle',
     intro: 'Ücret önceliği: proje → şirket → müşteri. Projenin para birimi, bağlı olduğu şirketinkidir.',
     emptyText: 'Proje yok.', endpoint: '/api/projects', onSaved: rerender,
     rows: () => state.projects.filter((p) => p.customer_id === id),

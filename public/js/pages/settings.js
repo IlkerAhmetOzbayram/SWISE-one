@@ -1,15 +1,18 @@
-import { state, isAdmin, $, main, api, toast, esc, formToObj, loadRefs, fmtDate, fmtDateTime, fmtBytes, dayName } from '../core.js';
+import { state, can, $, main, api, toast, esc, formToObj, loadRefs, fmtDate, fmtDateTime, fmtBytes, dayName } from '../core.js';
 import { adminCrud } from '../components/admin-crud.js';
 
 export function pageSettings() {
   const s = state.settings;
   main.innerHTML = `<h1>Ayarlar</h1>
-    ${isAdmin() ? `<section class="card"><h2>Şirket ve vergi ayarları</h2>
+    <section class="card"><div class="card-head"><h2>Profilim</h2><a href="#/personel/${state.user.id}">Personel kartım →</a></div>
+      <p class="hint" style="margin:0">${esc(state.user.full_name)} · Rol: <b>${esc(state.user.role_name || '—')}</b></p></section>
+    ${can('settings.edit') ? `<section class="card"><h2>Şirket ve vergi ayarları</h2>
       <form class="grid" data-settings>
         <label class="wide">Şirket adı<input name="company_name" value="${esc(s.company_name)}" required></label>
         <label>KDV oranı (%)<input name="vat_rate" inputmode="decimal" value="${esc(s.vat_rate)}" required></label>
         <label>Stopaj oranı (%)<input name="withholding_rate" inputmode="decimal" value="${esc(s.withholding_rate)}" required></label>
         <label class="full">Masraf kategorileri (virgülle ayırın)<input name="expense_categories" value="${esc(s.expense_categories)}" required></label>
+        <label class="check full"><input type="checkbox" name="show_own_salary" ${s.show_own_salary === '1' ? 'checked' : ''}> Personel kendi maaş geçmişini personel kartında görebilsin</label>
         <div class="actions"><button type="submit">Kaydet</button></div>
       </form></section>
     <div data-holidays></div>
@@ -21,7 +24,7 @@ export function pageSettings() {
     <section class="card"><h2>Parola değiştir</h2>
       <form class="grid" data-password>
         <label>Mevcut parola<input type="password" name="current" autocomplete="current-password" required></label>
-        <label>Yeni parola<input type="password" name="password" autocomplete="new-password" minlength="6" required></label>
+        <label>Yeni parola<input type="password" name="password" autocomplete="new-password" minlength="8" required></label>
         <div class="actions"><button type="submit">Parolayı güncelle</button></div>
       </form>
       <p class="hint">Parola değişince diğer cihazlardaki oturumlarınız kapatılır.</p>

@@ -3,7 +3,7 @@ const express = require('express');
 const { one, run, tx } = require('../../db');
 const { HttpError, bad } = require('../../lib/http');
 const { str, num, date } = require('../../lib/validate');
-const { auth, admin } = require('../../lib/auth');
+const { auth, requirePerm } = require('../../lib/auth');
 const audit = require('../../lib/audit');
 const { buildBudget, listPlans } = require('./service');
 
@@ -15,12 +15,12 @@ const month = (v, field = 'Ay') => {
   return s;
 };
 
-router.get('/api/budget', auth, admin, (req, res) => {
+router.get('/api/budget', auth, requirePerm('budget.view'), (req, res) => {
   const today = req.query.today ? date(req.query.today, 'Bugün') : undefined;
   res.json(buildBudget(month(req.query.month), today));
 });
 
-router.get('/api/plans', auth, admin, (req, res) => res.json(listPlans(month(req.query.month))));
+router.get('/api/plans', auth, requirePerm('budget.view'), (req, res) => res.json(listPlans(month(req.query.month))));
 
 // Hedef: müşteri zorunlu; şirket ve proje isteğe bağlı ama birbirine ait olmalı
 function planFields(b) {
@@ -41,7 +41,7 @@ const duplicate = (err) => {
   throw err;
 };
 
-router.post('/api/plans', auth, admin, (req, res) => {
+router.post('/api/plans', auth, requirePerm('budget.edit'), (req, res) => {
   const values = planFields(req.body);
   try {
     const id = tx(() => {
@@ -54,7 +54,7 @@ router.post('/api/plans', auth, admin, (req, res) => {
   } catch (err) { duplicate(err); }
 });
 
-router.put('/api/plans/:id', auth, admin, (req, res) => {
+router.put('/api/plans/:id', auth, requirePerm('budget.edit'), (req, res) => {
   const before = audit.snapshot('budget_plans', Number(req.params.id));
   if (!before) throw new HttpError(404, 'Kayıt bulunamadı');
   const values = planFields(req.body);
@@ -68,7 +68,7 @@ router.put('/api/plans/:id', auth, admin, (req, res) => {
   } catch (err) { duplicate(err); }
 });
 
-router.delete('/api/plans/:id', auth, admin, (req, res) => {
+router.delete('/api/plans/:id', auth, requirePerm('budget.edit'), (req, res) => {
   const before = audit.snapshot('budget_plans', Number(req.params.id));
   if (!before) throw new HttpError(404, 'Kayıt bulunamadı');
   tx(() => {
@@ -79,7 +79,7 @@ router.delete('/api/plans/:id', auth, admin, (req, res) => {
 });
 
 // Bir ayın planlarını başka aya kopyalar; hedef ayda zaten olanlar atlanır
-router.post('/api/plans/copy', auth, admin, (req, res) => {
+router.post('/api/plans/copy', auth, requirePerm('budget.edit'), (req, res) => {
   const from = month(req.body.from_month, 'Kaynak ay');
   const to = month(req.body.to_month, 'Hedef ay');
   if (from === to) bad('Kaynak ve hedef ay aynı olamaz');

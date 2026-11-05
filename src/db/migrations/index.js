@@ -6,4 +6,5 @@ module.exports = [
   require('./003-musteri-sirket'),
   require('./004-proje-istege-bagli'),
   require('./005-takvim-plan'),
+  require('./006-yetki-personel-onay'),
 ];

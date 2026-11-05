@@ -1,9 +1,10 @@
 // Ana sayfa göstergeleri: kişinin bu ay/bu haftaki eforu, eksik efor girilen iş günleri;
 // yönetici için ek olarak bütçe özeti, en çok çalışılan müşteriler ve ekibin eksik günleri.
 const express = require('express');
-const { all } = require('../../db');
+const { one, all } = require('../../db');
 const { date, r2 } = require('../../lib/validate');
-const { auth, isAdmin } = require('../../lib/auth');
+const { auth, can } = require('../../lib/auth');
+const { weekStartOf } = require('../../lib/locks');
 const { monthRange, holidayMap, dayValue, eachDay, isoDay, today: todayStr } = require('../../lib/workdays');
 const { buildBudget, monthProgress } = require('../budget/service');
 const { HOURS_PER_DAY } = require('../activities');
@@ -60,12 +61,23 @@ router.get('/api/dashboard', auth, (req, res) => {
     },
   };
 
-  if (isAdmin(req)) {
-    result.budget = buildBudget(month, today).totals;
+  // Kişinin bu haftaki onay durumu ve geri gönderilen haftaları/masrafları
+  result.me.week_status = one('SELECT status, note FROM timesheets WHERE user_id = ? AND week_start = ?', req.user.id, weekStartOf(today)) || { status: 'draft' };
+  result.me.rejected_weeks = all("SELECT week_start, note FROM timesheets WHERE user_id = ? AND status = 'rejected' ORDER BY week_start", req.user.id);
+  result.me.rejected_expenses = one("SELECT COUNT(*) n FROM expenses WHERE user_id = ? AND status = 'rejected'", req.user.id).n;
+
+  // Onay bekleyenler (onay yetkisi olanlara)
+  if (can(req, 'activities.approve')) result.pending_weeks = one("SELECT COUNT(*) n FROM timesheets WHERE status = 'submitted'").n;
+  if (can(req, 'expenses.approve')) result.pending_expenses = one("SELECT COUNT(*) n FROM expenses WHERE status = 'pending'").n;
+
+  if (can(req, 'budget.view')) result.budget = buildBudget(month, today).totals;
+  if (can(req, 'customers.view')) {
     result.top_customers = all(`SELECT cu.id, cu.name, SUM(a.hours) hours FROM activities a
       JOIN companies co ON co.id = a.company_id JOIN customers cu ON cu.id = co.customer_id
       WHERE a.date BETWEEN ? AND ? GROUP BY cu.id ORDER BY hours DESC LIMIT 5`, from, to)
       .map((r) => ({ ...r, hours: r2(r.hours), days: r2(r.hours / HOURS_PER_DAY) }));
+  }
+  if (can(req, 'personnel.view')) {
     result.team = all("SELECT id, full_name FROM users WHERE active = 1 AND username != 'yerel' ORDER BY full_name").map((u) => {
       const byDay = hoursByDay(u.id, from, to);
       return { id: u.id, full_name: u.full_name, month_hours: sum(byDay, 'hours'), missing: missingDays(byDay, from, today, holidays).length };

@@ -89,12 +89,33 @@ test/                     Otomatik testler (node:test)
 docs/                     Yol haritası ve kararlar
 ```
 
-## Roller
+## Roller ve yetkiler
 
-- **Yönetici**: müşteri/proje/kullanıcı tanımlar, tüm kayıtları görür ve düzenler, muhasebe raporunu alır,
-  işlem kaydını ve yedekleri görür, ayarları değiştirir.
-- **Çalışan**: yalnızca kendi aktivite ve masraflarını girer/düzenler; ücret bilgilerini görmez.
-  (Ayrıntılı roller ve yetkiler Faz 3'te gelecek.)
+Yetkiler rol bazındadır (Personel → Roller ve yetkiler). Her modülde görme / ekleme-düzenleme / onaylama /
+kapatma yetkileri ayrı ayrı verilir; kayıt kapsamı *kendi*, *sorumlu olduğu müşteriler* veya *tümü* olabilir.
+
+| Rol | Özet |
+|---|---|
+| Yönetici | Tüm yetkiler (kilitli, değiştirilemez) |
+| Muhasebe | Tüm efor/masrafı görür, masraf onaylar, raporlar, bütçe, maaş, ay kapanışı |
+| Proje Yöneticisi | Sorumlu olduğu müşterilerin eforu ve efor raporu; ücret görmez |
+| Çalışan | Yalnızca kendi aktivite ve masrafları |
+
+Özel rol, mevcut bir rolden kopyalanarak oluşturulur. En az bir aktif Yönetici her zaman kalır.
+
+## Onaylar ve kilitler
+
+- **Masraf:** onay yetkisi olmayanın girdiği masraf "onay bekliyor" başlar; onaylanmamış masraf muhasebe
+  raporunda müşteriye yansıtılmaz. Onaylanan masrafı yalnızca onaylayan değiştirebilir.
+- **Haftalık efor:** çalışan haftasını onaya gönderir; onaylanan hafta kilitlenir ("Yeniden aç" ile açılır).
+- **Ay kapanışı:** kapalı ayın aktivite ve masrafları kimse tarafından değiştirilemez; yalnızca Yönetici yeniden açar.
+
+## Personel ve KVKK
+
+Personel kartı: genel bilgiler, hesap/rol, hassas bilgiler (IBAN, acil durum kişisi) ve maaş geçmişi.
+Hassas bilgilerin başkası tarafından görüntülenmesi işlem kaydına yazılır; değerlerin kendisi kayda yazılmaz.
+Ayrılan ve pasif personelin iletişim ve hassas bilgileri anonimleştirilebilir (maaş geçmişi yasal saklama için kalır).
+Parolalar en az 8 karakterdir.
 
 ## Müşteri yapısı
 

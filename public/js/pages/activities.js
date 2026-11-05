@@ -1,4 +1,4 @@
-import { isAdmin, esc, money, moneyByCurrency, hrs, today, fmtDate, parseHours, clientProjectCell, yesNo, HOURS_PER_DAY } from '../core.js';
+import { seeOthers, editOthers, seeRates, esc, money, moneyByCurrency, hrs, today, fmtDate, parseHours, clientProjectCell, yesNo, HOURS_PER_DAY } from '../core.js';
 import { entryPage, footerCells } from '../components/entry-page.js';
 import { effectiveRate } from '../components/target-select.js';
 
@@ -24,6 +24,7 @@ export function pageActivities() {
     title: 'Aktivite Giriş',
     newTitle: 'Yeni aktivite',
     editTitle: 'Aktiviteyi düzenle',
+    module: 'activities',
     endpoint: '/api/activities',
     fields: ({ target, user }) => `
       <label>Tarih<input type="date" name="date" required></label>
@@ -31,9 +32,9 @@ export function pageActivities() {
       <label>Süre (saat)<input name="hours" placeholder="1,5 veya 1:30" inputmode="decimal" required></label>
       <label class="full">Açıklama<input name="description" placeholder="Ne üzerinde çalışıldı?" required></label>
       ${user}
-      ${isAdmin() ? '<label>Günlük ücret<input name="daily_rate" inputmode="decimal" placeholder="Otomatik"></label>' : ''}
+      ${seeRates() && editOthers('activities') ? '<label>Günlük ücret<input name="daily_rate" inputmode="decimal" placeholder="Otomatik"></label>' : ''}
       <label class="check"><input type="checkbox" name="billable"> Faturalanabilir</label>
-      ${isAdmin() ? '<p class="hint full" data-rate-hint></p>' : ''}`,
+      ${seeRates() ? '<p class="hint full" data-rate-hint></p>' : ''}`,
     defaults: (f) => {
       f.elements.namedItem('date').value = today();
       f.elements.namedItem('billable').checked = true;
@@ -47,13 +48,13 @@ export function pageActivities() {
     toForm: (r) => ({ ...r, hours: hrs(r.hours), daily_rate: r.daily_rate ?? '' }),
     columns: [
       { h: 'Tarih', v: (r) => fmtDate(r.date) },
-      { h: 'Kullanıcı', admin: true, v: (r) => esc(r.user_name) },
+      { h: 'Kullanıcı', show: () => seeOthers('activities'), v: (r) => esc(r.user_name) },
       { h: 'Müşteri / Proje', v: clientProjectCell },
       { h: 'Açıklama', v: (r) => esc(r.description) },
       { h: 'Saat', key: 'hours', cls: 'num', v: (r) => hrs(r.hours) },
       { h: 'Fatura', key: 'billable', v: (r) => yesNo(r.billable) },
-      { h: 'Günlük ücret', admin: true, cls: 'num', v: (r) => money(r.daily_rate, r.currency) },
-      { h: 'Tutar', key: 'amount', admin: true, cls: 'num', v: (r) => (r.billable ? money(amount(r), r.currency) : '—') },
+      { h: 'Günlük ücret', show: seeRates, cls: 'num', v: (r) => money(r.daily_rate, r.currency) },
+      { h: 'Tutar', key: 'amount', show: seeRates, cls: 'num', v: (r) => (r.billable ? money(amount(r), r.currency) : '—') },
     ],
     footer: (rows, cols) => {
       const billable = rows.reduce((a, r) => a + (r.billable ? r.hours : 0), 0);

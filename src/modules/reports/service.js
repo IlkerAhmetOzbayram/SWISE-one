@@ -72,10 +72,13 @@ function buildReport(req) {
 
   const expenseByCurrency = new Map();
   const categories = new Map();
+  // Yalnızca onaylanmış masraflar rapora girer; onay bekleyenler ayrıca gösterilir, reddedilenler hiç girmez
   for (const e of expenses) {
-    const vat = e.amount * e.vat_rate / 100;
-    if (!expenseByCurrency.has(e.currency)) expenseByCurrency.set(e.currency, { currency: e.currency, billable: 0, nonbillable: 0, input_vat: 0 });
+    if (e.status === 'rejected') continue;
+    if (!expenseByCurrency.has(e.currency)) expenseByCurrency.set(e.currency, { currency: e.currency, billable: 0, nonbillable: 0, input_vat: 0, pending: 0 });
     const ex = expenseByCurrency.get(e.currency);
+    if (e.status === 'pending') { ex.pending += e.amount; continue; }
+    const vat = e.amount * e.vat_rate / 100;
     ex.input_vat += vat;
     if (e.billable) { bucket(e, e.currency).expenses += e.amount; ex.billable += e.amount; }
     else ex.nonbillable += e.amount;
@@ -134,7 +137,7 @@ function buildReport(req) {
     })).sort((a, b) => b.hours - a.hours),
     expense_summary: {
       totals: [...expenseByCurrency.values()].map((e) => ({
-        ...e, billable: r2(e.billable), nonbillable: r2(e.nonbillable), input_vat: r2(e.input_vat),
+        ...e, billable: r2(e.billable), nonbillable: r2(e.nonbillable), input_vat: r2(e.input_vat), pending: r2(e.pending),
       })).sort(byCurrency),
       categories: [...categories.values()].map((c) => ({ ...c, amount: r2(c.amount), vat: r2(c.vat) }))
         .sort((a, b) => a.category.localeCompare(b.category, 'tr') || byCurrency(a, b)),

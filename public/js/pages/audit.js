@@ -5,12 +5,15 @@ import { filters, filterBar, bindFilterBar } from '../filters.js';
 const ACTIONS = {
   create: 'Ekleme', update: 'Güncelleme', delete: 'Silme', setup: 'İlk kurulum',
   login: 'Giriş', login_failed: 'Hatalı giriş', password_change: 'Parola değişikliği',
-  password_reset: 'Parola sıfırlama', backup_download: 'Yedek indirme',
+  password_reset: 'Parola sıfırlama', backup_download: 'Yedek indirme', approve: 'Onay', reject: 'Ret / geri gönderme',
+  submit: 'Onaya gönderme', withdraw: 'Geri çekme', reopen: 'Yeniden açma', close: 'Kapatma', sensitive_view: 'Hassas bilgi görüntüleme',
+  anonymize: 'Anonimleştirme', logout_all: 'Oturumları kapatma',
 };
 const ENTITIES = {
   activities: 'Aktivite', expenses: 'Masraf', customers: 'Müşteri', companies: 'Şirket', contacts: 'İletişim kişisi',
   projects: 'Proje', users: 'Kullanıcı', settings: 'Ayarlar', database: 'Veritabanı', clients: 'Müşteri (eski yapı)',
-  holidays: 'Tatil', budget_plans: 'Aylık plan',
+  holidays: 'Tatil', budget_plans: 'Aylık plan', roles: 'Rol', timesheets: 'Haftalık efor', periods: 'Ay kapanışı',
+  salaries: 'Maaş', personnel_sensitive: 'Hassas bilgi',
 };
 const FIELDS = {
   date: 'Tarih', description: 'Açıklama', hours: 'Saat', billable: 'Faturalanabilir', rate: 'Ücret',
@@ -19,7 +22,10 @@ const FIELDS = {
   default_rate: 'Varsayılan ücret', hourly_rate: 'Saatlik ücret', daily_rate: 'Günlük ücret', currency: 'Para birimi',
   payment_days: 'Vade (gün)', notes: 'Notlar', email: 'E-posta', phone: 'Telefon', vat_exempt: 'KDV uygulanmaz',
   title: 'Görev', receives_offers: 'Teklif alır', receives_invoices: 'Fatura alır', withholding: 'Stopaj', active: 'Aktif',
-  planned_days: 'Planlanan adam-gün', month: 'Ay', kind: 'Tür',
+  planned_days: 'Planlanan adam-gün', month: 'Ay', kind: 'Tür', role_id: 'Rol no', department: 'Departman',
+  start_date: 'İşe giriş', end_date: 'Çıkış', employment_type: 'Çalışma tipi', manager_id: 'Sorumlu no', changed_fields: 'Değişen alanlar',
+  week_start: 'Hafta', note: 'Not', effective_date: 'Geçerlilik', tutar: 'Tutar', status: 'Durum', permissions: 'Yetkiler',
+  description: 'Açıklama', unapproved_weeks: 'Onaysız hafta', pending_expenses: 'Bekleyen masraf', sessions: 'Oturum sayısı',
   username: 'Kullanıcı adı', full_name: 'Ad soyad', role: 'Rol', company_name: 'Şirket adı',
   withholding_rate: 'Stopaj oranı', expense_categories: 'Masraf kategorileri',
 };

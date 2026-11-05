@@ -10,7 +10,8 @@ const audit = require('../../lib/audit');
 const router = express.Router();
 const limiter = createLoginLimiter();
 
-const checkPassword = (pw) => { if (pw.length < 6) bad('Parola en az 6 karakter olmalı'); return pw; };
+const MIN_PASSWORD = 8;
+const checkPassword = (pw) => { if (pw.length < MIN_PASSWORD) bad(`Parola en az ${MIN_PASSWORD} karakter olmalı`); return pw; };
 
 router.get('/api/setup', (req, res) => {
   res.json({ needsSetup: one('SELECT COUNT(*) n FROM users').n === 0 });
@@ -21,7 +22,8 @@ router.post('/api/setup', (req, res) => {
   const userId = tx(() => {
     if (one('SELECT COUNT(*) n FROM users').n > 0) bad('Kurulum zaten tamamlanmış');
     const { lastInsertRowid } = run(
-      `INSERT INTO users (username, full_name, password_hash, role) VALUES (?, ?, ?, 'admin')`,
+      `INSERT INTO users (username, full_name, password_hash, role, role_id)
+       VALUES (?, ?, ?, 'admin', (SELECT id FROM roles WHERE locked = 1 ORDER BY id LIMIT 1))`,
       str(b.username, 'Kullanıcı adı').toLowerCase(), str(b.full_name, 'Ad soyad'),
       hashPassword(checkPassword(str(b.password, 'Parola'))));
     const id = Number(lastInsertRowid);

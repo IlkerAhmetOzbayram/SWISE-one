@@ -2,11 +2,11 @@
 const express = require('express');
 const { all } = require('../../db');
 const { date } = require('../../lib/validate');
-const { auth, admin } = require('../../lib/auth');
+const { auth, requirePerm } = require('../../lib/auth');
 
 const router = express.Router();
 
-router.get('/api/audit', auth, admin, (req, res) => {
+router.get('/api/audit', auth, requirePerm('audit.view'), (req, res) => {
   const q = req.query;
   const where = [];
   const params = [];

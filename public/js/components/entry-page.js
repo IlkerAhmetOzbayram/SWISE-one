@@ -1,5 +1,5 @@
 // Aktivite / masraf giriş sayfası (ortak iskelet): form + filtreli liste
-import { state, isAdmin, $, main, api, toast, formToObj, fillForm, qs, esc, userOptions } from '../core.js';
+import { state, can, seeOthers, editOthers, $, main, api, toast, formToObj, fillForm, qs, esc, userOptions } from '../core.js';
 import { filters, filterBar, bindFilterBar } from '../filters.js';
 import { targetFields, setTarget, getTarget, bindTarget, hasTargets } from './target-select.js';
 
@@ -9,7 +9,7 @@ export function footerCells(cols, values) {
 }
 
 // Kaydı giren kullanıcı: yalnızca yönetici değiştirebilir, diğerleri kendi adını görür
-const userField = () => (isAdmin()
+const userField = (module) => (editOthers(module)
   ? `<label>Kullanıcı<select name="user_id">${userOptions()}</select></label>`
   : `<label>Kullanıcı<input value="${esc(state.user.full_name)}" disabled></label>`);
 
@@ -18,15 +18,15 @@ export function entryPage(cfg) {
   main.innerHTML = `<h1>${cfg.title}</h1>
     <section class="card">
       <h2 data-title>${cfg.newTitle}</h2>
-      ${ready ? '' : `<p class="hint">Henüz aktif müşteri yok. ${isAdmin() ? '<a href="#/musteriler">Müşteri ekleyin</a>.' : 'Yöneticinizden müşteri tanımlamasını isteyin.'}</p>`}
+      ${ready ? '' : `<p class="hint">Henüz aktif müşteri yok. ${can('customers.edit') ? '<a href="#/musteriler">Müşteri ekleyin</a>.' : 'Yöneticinizden müşteri tanımlamasını isteyin.'}</p>`}
       <form class="grid" id="entryForm" ${ready ? '' : 'hidden'}>
         <input type="hidden" name="_id">
-        ${cfg.fields({ target: targetFields(), user: userField() })}
+        ${cfg.fields({ target: targetFields(), user: userField(cfg.module) })}
         <div class="actions"><button type="submit">Kaydet</button><button type="button" class="secondary" data-cancel hidden>Vazgeç</button></div>
       </form>
     </section>
     <section class="card">
-      ${filterBar({ user: isAdmin() })}
+      ${filterBar({ user: seeOthers(cfg.module) })}
       <div class="table-wrap" data-list></div>
     </section>`;
 
@@ -42,7 +42,7 @@ export function entryPage(cfg) {
     form.reset();
     field('_id').value = '';
     cfg.defaults(form);
-    if (isAdmin()) field('user_id').value = state.user.id;
+    if (editOthers(cfg.module)) field('user_id').value = state.user.id;
     setTarget(form, keepContext ? keep.target : {});
     if (keepContext && keep.date) field('date').value = keep.date;
     cfg.onTargetChange?.(form);
@@ -54,7 +54,7 @@ export function entryPage(cfg) {
     try {
       rows = await api('GET', `${cfg.endpoint}?${qs(filters)}`);
     } catch (err) { return toast(err.message, true); }
-    const cols = cfg.columns.filter((c) => !c.admin || isAdmin());
+    const cols = cfg.columns.filter((c) => !c.show || c.show());
     $('[data-list]').innerHTML = rows.length ? `<table>
       <thead><tr>${cols.map((c) => `<th class="${c.cls || ''}">${c.h}</th>`).join('')}<th></th></tr></thead>
       <tbody>${rows.map((r) => `<tr>${cols.map((c) => `<td class="${c.cls || ''}">${c.v(r)}</td>`).join('')}

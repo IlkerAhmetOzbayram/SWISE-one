@@ -1,21 +1,25 @@
 // Müşteri efor raporu: müşteriye gönderilebilir döküm (ücret/tutar içermez)
-import { state, $, main, api, toast, esc, hrs, today, fmtDate, dayShort, qs, opt, LOGO_HTML } from '../core.js';
+import { state, can, $, main, api, toast, esc, hrs, today, fmtDate, dayShort, qs, opt, LOGO_HTML } from '../core.js';
 import { filters } from '../filters.js';
 
 const opts = { customer_id: '', company_id: '', billable_only: true };
 
 export const reportTabs = (active) => `<div class="tabs no-print" style="margin-bottom:16px">
-  <a href="#/rapor" class="${active === 'muhasebe' ? 'active' : ''}">Muhasebe raporu</a>
-  <a href="#/rapor/efor" class="${active === 'efor' ? 'active' : ''}">Müşteri efor raporu</a></div>`;
+  ${can('reports.view') ? `<a href="#/rapor" class="${active === 'muhasebe' ? 'active' : ''}">Muhasebe raporu</a>` : ''}
+  ${can('effort_report.view') ? `<a href="#/rapor/efor" class="${active === 'efor' ? 'active' : ''}">Müşteri efor raporu</a>` : ''}</div>`;
+
+// "Sorumlu olduğu" kapsamında yalnızca yöneticisi olunan müşteriler listelenir
+const reportCustomers = () => (can('effort_report.view') === 'all' ? state.customers : state.customers.filter((c) => c.manager_id === state.user.id));
 
 export function pageEffortReport() {
-  if (!opts.customer_id && state.customers.length) opts.customer_id = String(state.customers[0].id);
+  const customers = reportCustomers();
+  if (!customers.some((c) => String(c.id) === opts.customer_id)) opts.customer_id = customers.length ? String(customers[0].id) : '';
   const companies = state.companies.filter((c) => String(c.customer_id) === opts.customer_id);
 
   main.innerHTML = `<h1 class="no-print">Raporlar</h1>${reportTabs('efor')}
     <section class="card no-print">
       <div class="filters">
-        <label>Müşteri<select data-o="customer_id">${state.customers.map((c) => opt(c.id, c.name, opts.customer_id)).join('')}</select></label>
+        <label>Müşteri<select data-o="customer_id">${customers.map((c) => opt(c.id, c.name, opts.customer_id)).join('')}</select></label>
         ${companies.length > 1 ? `<label>Şirket<select data-o="company_id"><option value="">Tümü</option>${companies.map((c) => opt(c.id, c.name, opts.company_id)).join('')}</select></label>` : ''}
         <label>Başlangıç<input type="date" data-f="from" value="${filters.from}"></label>
         <label>Bitiş<input type="date" data-f="to" value="${filters.to}"></label>
@@ -25,7 +29,7 @@ export function pageEffortReport() {
       </div>
       <p class="hint" style="margin:0">Bu rapor müşteriye gönderilmek üzere hazırlanır; ücret ve tutar bilgisi içermez.</p>
     </section>
-    <div data-report>${state.customers.length ? '' : '<div class="empty">Henüz müşteri yok.</div>'}</div>`;
+    <div data-report>${customers.length ? '' : '<div class="empty">Raporunu alabileceğiniz müşteri yok.</div>'}</div>`;
 
   const params = () => qs({ customer_id: opts.customer_id, company_id: opts.company_id, from: filters.from, to: filters.to, billable_only: opts.billable_only ? '1' : '0' });
   main.querySelectorAll('[data-o]').forEach((el) => {

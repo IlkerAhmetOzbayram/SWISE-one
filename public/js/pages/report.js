@@ -1,11 +1,11 @@
-import { $, main, api, toast, esc, money, moneyByCurrency, hrs, pct, today, fmtDate, qs, clientProjectCell, LOGO_HTML, HOURS_PER_DAY, CURRENCY_LABELS } from '../core.js';
+import { can, $, main, api, toast, esc, money, moneyByCurrency, hrs, pct, today, fmtDate, qs, clientProjectCell, LOGO_HTML, HOURS_PER_DAY, CURRENCY_LABELS } from '../core.js';
 import { filters, filterBar, bindFilterBar } from '../filters.js';
 import { pageEffortReport, reportTabs } from './effort-report.js';
 
 let showDetails = false;
 
 export function pageReport(param) {
-  if (param === 'efor') return pageEffortReport();
+  if (param === 'efor' || !can('reports.view')) return pageEffortReport();
   main.innerHTML = `<h1 class="no-print">Raporlar</h1>${reportTabs('muhasebe')}
     <section class="card no-print">
       ${filterBar({

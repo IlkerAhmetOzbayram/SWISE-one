@@ -37,7 +37,8 @@ test('kullanıcı yokken giriş istenmeden "Yerel Yönetici" olarak çalışıl�
   const me = await call('GET', '/api/me');
   assert.equal(me.status, 200);
   assert.equal(me.data.full_name, 'Yerel Yönetici');
-  assert.equal(me.data.role, 'admin');
+  assert.equal(me.data.role_name, 'Yönetici');
+  assert.equal(me.data.perms['roles.edit'], true);
   assert.equal(me.data.no_login, true);
 });
 

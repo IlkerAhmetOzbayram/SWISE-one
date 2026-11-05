@@ -4,7 +4,7 @@ const express = require('express');
 const { one, all, run, tx } = require('../../db');
 const { bad, HttpError } = require('../../lib/http');
 const { str, num, int, flag, currency, email } = require('../../lib/validate');
-const { auth, admin, isAdmin } = require('../../lib/auth');
+const { auth, can, requirePerm } = require('../../lib/auth');
 const audit = require('../../lib/audit');
 
 const router = express.Router();
@@ -15,18 +15,36 @@ const existing = (table, id) => {
   return row;
 };
 const activeFlag = (b) => (b.active === undefined ? 1 : flag(b.active));
+const edit = requirePerm('customers.edit');
+
+// Ücret alanları yalnızca "ücretleri görme" yetkisiyle döner
+const RATE_KEYS = ['daily_rate', 'effective_daily_rate'];
+const withoutRates = (req, rows) => (can(req, 'rates.view') ? rows : rows.map((r) => {
+  const o = { ...r };
+  for (const k of RATE_KEYS) delete o[k];
+  return o;
+}));
 
 // ---------- Müşteriler ----------
+// Kayıt girişi için herkes müşteri adlarını görür; ayrıntılar "müşterileri görme" yetkisiyle
 router.get('/api/customers', auth, (req, res) => {
-  const cols = isAdmin(req)
-    ? 'cu.*, (SELECT COUNT(*) FROM companies co WHERE co.customer_id = cu.id) company_count'
-    : 'cu.id, cu.name, cu.active';
-  res.json(all(`SELECT ${cols} FROM customers cu ORDER BY cu.name`));
+  const cols = can(req, 'customers.view')
+    ? `cu.*, m.full_name manager_name, (SELECT COUNT(*) FROM companies co WHERE co.customer_id = cu.id) company_count`
+    : 'cu.id, cu.name, cu.active, cu.manager_id';
+  res.json(withoutRates(req, all(`SELECT ${cols} FROM customers cu LEFT JOIN users m ON m.id = cu.manager_id ORDER BY cu.name`)));
 });
+
+// Sorumlu proje yöneticisi (isteğe bağlı) aktif bir kullanıcı olmalı
+function managerOf(b) {
+  if (!b.manager_id) return null;
+  const id = Number(b.manager_id);
+  if (!one('SELECT id FROM users WHERE id = ? AND active = 1', id)) bad('Sorumlu kişi bulunamadı');
+  return id;
+}
 
 const customerFields = (b) => [
   str(b.name, 'Müşteri adı'), num(b.daily_rate, 'Günlük ücret'), currency(b.currency),
-  int(b.payment_days, 'Ödeme vadesi', { required: false }) ?? 30, str(b.notes, '', false), activeFlag(b),
+  int(b.payment_days, 'Ödeme vadesi', { required: false }) ?? 30, str(b.notes, '', false), activeFlag(b), managerOf(b),
 ];
 
 // VKN (10 hane) / TCKN (11 hane); yurt dışı vergi numaraları harf içerebilir. En fazla 11 karakter.
@@ -52,11 +70,11 @@ const INSERT_COMPANY = `INSERT INTO companies (customer_id, name, tax_no, tax_of
   daily_rate, currency, payment_days, withholding, vat_exempt, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
 // Yeni müşteri, ilk şirketiyle (fatura bilgileri) birlikte oluşturulur
-router.post('/api/customers', auth, admin, (req, res) => {
+router.post('/api/customers', auth, edit, (req, res) => {
   const b = req.body;
   const result = tx(() => {
     const { lastInsertRowid } = run(
-      'INSERT INTO customers (name, daily_rate, currency, payment_days, notes, active) VALUES (?, ?, ?, ?, ?, ?)',
+      'INSERT INTO customers (name, daily_rate, currency, payment_days, notes, active, manager_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
       ...customerFields(b));
     const id = Number(lastInsertRowid);
     audit.logCreate(req, 'customers', id);
@@ -71,10 +89,10 @@ router.post('/api/customers', auth, admin, (req, res) => {
   res.json(result);
 });
 
-router.put('/api/customers/:id', auth, admin, (req, res) => {
+router.put('/api/customers/:id', auth, edit, (req, res) => {
   const before = existing('customers', Number(req.params.id));
   tx(() => {
-    run('UPDATE customers SET name = ?, daily_rate = ?, currency = ?, payment_days = ?, notes = ?, active = ? WHERE id = ?',
+    run('UPDATE customers SET name = ?, daily_rate = ?, currency = ?, payment_days = ?, notes = ?, active = ?, manager_id = ? WHERE id = ?',
       ...customerFields(req.body), before.id);
     audit.logUpdate(req, 'customers', before);
   });
@@ -83,14 +101,14 @@ router.put('/api/customers/:id', auth, admin, (req, res) => {
 
 // ---------- Şirketler ----------
 router.get('/api/companies', auth, (req, res) => {
-  const cols = isAdmin(req)
+  const cols = can(req, 'customers.view')
     ? `co.*, COALESCE(co.daily_rate, cu.daily_rate) effective_daily_rate,
        COALESCE(co.currency, cu.currency) effective_currency,
        COALESCE(co.payment_days, cu.payment_days) effective_payment_days`
     : 'co.id, co.customer_id, co.name, co.active, COALESCE(co.currency, cu.currency) effective_currency';
   // "usable": şirket ve müşterisi aktifse yeni kayıt girilebilir
-  res.json(all(`SELECT ${cols}, cu.name customer_name, (co.active AND cu.active) usable
-                FROM companies co JOIN customers cu ON cu.id = co.customer_id ORDER BY cu.name, co.name`));
+  res.json(withoutRates(req, all(`SELECT ${cols}, cu.name customer_name, (co.active AND cu.active) usable
+                FROM companies co JOIN customers cu ON cu.id = co.customer_id ORDER BY cu.name, co.name`)));
 });
 
 function customerOf(b) {
@@ -99,7 +117,7 @@ function customerOf(b) {
   return id;
 }
 
-router.post('/api/companies', auth, admin, (req, res) => {
+router.post('/api/companies', auth, edit, (req, res) => {
   const id = tx(() => {
     const { lastInsertRowid } = run(INSERT_COMPANY, ...companyFields(req.body, customerOf(req.body)));
     audit.logCreate(req, 'companies', Number(lastInsertRowid));
@@ -108,7 +126,7 @@ router.post('/api/companies', auth, admin, (req, res) => {
   res.json({ id });
 });
 
-router.put('/api/companies/:id', auth, admin, (req, res) => {
+router.put('/api/companies/:id', auth, edit, (req, res) => {
   const before = existing('companies', Number(req.params.id));
   tx(() => {
     run(`UPDATE companies SET customer_id = ?, name = ?, tax_no = ?, tax_office = ?, address = ?, email = ?, phone = ?,
@@ -120,7 +138,7 @@ router.put('/api/companies/:id', auth, admin, (req, res) => {
 });
 
 // ---------- İletişim kişileri ----------
-router.get('/api/contacts', auth, admin, (req, res) => {
+router.get('/api/contacts', auth, requirePerm('customers.view'), (req, res) => {
   const where = req.query.customer_id ? 'WHERE ct.customer_id = ?' : '';
   const params = req.query.customer_id ? [Number(req.query.customer_id)] : [];
   res.json(all(`SELECT ct.*, co.name company_name FROM contacts ct LEFT JOIN companies co ON co.id = ct.company_id
@@ -138,7 +156,7 @@ function contactFields(b) {
     str(b.phone, '', false), flag(b.receives_offers), flag(b.receives_invoices), str(b.notes, '', false), activeFlag(b)];
 }
 
-router.post('/api/contacts', auth, admin, (req, res) => {
+router.post('/api/contacts', auth, edit, (req, res) => {
   const id = tx(() => {
     const { lastInsertRowid } = run(`INSERT INTO contacts (customer_id, company_id, full_name, title, email, phone,
       receives_offers, receives_invoices, notes, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, ...contactFields(req.body));
@@ -148,7 +166,7 @@ router.post('/api/contacts', auth, admin, (req, res) => {
   res.json({ id });
 });
 
-router.put('/api/contacts/:id', auth, admin, (req, res) => {
+router.put('/api/contacts/:id', auth, edit, (req, res) => {
   const before = existing('contacts', Number(req.params.id));
   tx(() => {
     run(`UPDATE contacts SET customer_id = ?, company_id = ?, full_name = ?, title = ?, email = ?, phone = ?,
@@ -158,7 +176,7 @@ router.put('/api/contacts/:id', auth, admin, (req, res) => {
   res.json({ ok: true });
 });
 
-router.delete('/api/contacts/:id', auth, admin, (req, res) => {
+router.delete('/api/contacts/:id', auth, edit, (req, res) => {
   const before = existing('contacts', Number(req.params.id));
   tx(() => {
     run('DELETE FROM contacts WHERE id = ?', before.id);
@@ -170,13 +188,13 @@ router.delete('/api/contacts/:id', auth, admin, (req, res) => {
 // ---------- Projeler ----------
 // "usable": proje, şirketi ve müşterisi aktifse yeni kayıt girilebilir
 router.get('/api/projects', auth, (req, res) => {
-  const cols = isAdmin(req)
+  const cols = can(req, 'customers.view')
     ? 'p.*, COALESCE(p.daily_rate, co.daily_rate, cu.daily_rate) effective_daily_rate'
     : 'p.id, p.company_id, p.name, p.active';
-  res.json(all(`SELECT ${cols}, co.name company_name, co.customer_id, cu.name customer_name,
+  res.json(withoutRates(req, all(`SELECT ${cols}, co.name company_name, co.customer_id, cu.name customer_name,
                 COALESCE(co.currency, cu.currency) currency, (p.active AND co.active AND cu.active) usable
                 FROM projects p JOIN companies co ON co.id = p.company_id JOIN customers cu ON cu.id = co.customer_id
-                ORDER BY cu.name, co.name, p.name`));
+                ORDER BY cu.name, co.name, p.name`)));
 });
 
 function projectFields(b) {
@@ -185,7 +203,7 @@ function projectFields(b) {
   return [companyId, str(b.name, 'Proje adı'), num(b.daily_rate, 'Günlük ücret', { required: false }), activeFlag(b)];
 }
 
-router.post('/api/projects', auth, admin, (req, res) => {
+router.post('/api/projects', auth, edit, (req, res) => {
   const id = tx(() => {
     const { lastInsertRowid } = run('INSERT INTO projects (company_id, name, daily_rate, active) VALUES (?, ?, ?, ?)',
       ...projectFields(req.body));
@@ -195,7 +213,7 @@ router.post('/api/projects', auth, admin, (req, res) => {
   res.json({ id });
 });
 
-router.put('/api/projects/:id', auth, admin, (req, res) => {
+router.put('/api/projects/:id', auth, edit, (req, res) => {
   const before = existing('projects', Number(req.params.id));
   tx(() => {
     run('UPDATE projects SET company_id = ?, name = ?, daily_rate = ?, active = ? WHERE id = ?',
