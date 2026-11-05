@@ -8,4 +8,5 @@ module.exports = [
   require('./005-takvim-plan'),
   require('./006-yetki-personel-onay'),
   require('./007-teklif'),
+  require('./008-muhasebe'),
 ];

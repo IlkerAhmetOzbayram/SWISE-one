@@ -8,13 +8,15 @@ const ACTIONS = {
   password_reset: 'Parola sıfırlama', backup_download: 'Yedek indirme', approve: 'Onay', reject: 'Ret / geri gönderme',
   submit: 'Onaya gönderme', withdraw: 'Geri çekme', reopen: 'Yeniden açma', close: 'Kapatma', sensitive_view: 'Hassas bilgi görüntüleme',
   anonymize: 'Anonimleştirme', logout_all: 'Oturumları kapatma', sign: 'İmzalı dosya yükleme', send: 'Gönderim',
-  accept: 'Kabul', decline: 'Müşteri reddi', revise: 'Revizyon',
+  accept: 'Kabul', decline: 'Müşteri reddi', revise: 'Revizyon', issue: 'Fatura kesme', cancel: 'İptal', attach: 'Ek yükleme',
 };
 const ENTITIES = {
   activities: 'Aktivite', expenses: 'Masraf', customers: 'Müşteri', companies: 'Şirket', contacts: 'İletişim kişisi',
   projects: 'Proje', users: 'Kullanıcı', settings: 'Ayarlar', database: 'Veritabanı', clients: 'Müşteri (eski yapı)',
   holidays: 'Tatil', budget_plans: 'Aylık plan', roles: 'Rol', timesheets: 'Haftalık efor', periods: 'Ay kapanışı',
   salaries: 'Maaş', personnel_sensitive: 'Hassas bilgi', offers: 'Teklif',
+  accounts: 'Kasa/banka hesabı', suppliers: 'Tedarikçi', categories: 'Gelir/gider kategorisi', exchange_rates: 'Döviz kuru',
+  invoices: 'Fatura', transactions: 'Kasa/banka hareketi', payroll: 'Bordro', category_budgets: 'Kategori bütçesi',
 };
 const FIELDS = {
   date: 'Tarih', description: 'Açıklama', hours: 'Saat', billable: 'Faturalanabilir', rate: 'Ücret',

@@ -10,7 +10,7 @@ const { one, all, run, tx } = require('../../db');
 const { HttpError, bad, asyncHandler } = require('../../lib/http');
 const { str, num, int, date, currency, r2 } = require('../../lib/validate');
 const { auth, can, requirePerm } = require('../../lib/auth');
-const { today } = require('../../lib/workdays');
+const { today, isoDay } = require('../../lib/workdays');
 const { getSettings } = require('../settings');
 const { buildOfferPdf } = require('./pdf');
 const audit = require('../../lib/audit');
@@ -36,7 +36,7 @@ function scopeWhere(req) {
 function validUntil(o) {
   const d = new Date(`${o.offer_date}T00:00:00`);
   d.setDate(d.getDate() + o.valid_days);
-  return d.toISOString().slice(0, 10);
+  return isoDay(d);
 }
 // Gönderilmiş ve geçerlilik süresi geçmiş teklif "süresi doldu" sayılır
 const withExpiry = (o) => ({ ...o, valid_until: validUntil(o), expired: o.status === 'sent' && validUntil(o) < today() });
