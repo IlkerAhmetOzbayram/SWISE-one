@@ -370,3 +370,9 @@ textarea { font: inherit; resize: vertical; line-height: 1.45; }
 .stepper .bar { flex: 1; min-width: 16px; height: 2px; background: var(--blue-100); }
 @media (max-width: 860px) { .grid.form-like { grid-template-columns: 1fr 1fr; } }
 .items-table select { min-width: 140px; }
+
+/* ---------- Faz 5: muhasebe ---------- */
+.tabs-wrap { flex-wrap: wrap; }
+table.pnl td, table.pnl th { padding: 7px 8px; font-size: 13px; }
+table.pnl td:first-child { min-width: 170px; }
+.budget-card > b { display: block; margin: 2px 0 6px; color: var(--brand); }

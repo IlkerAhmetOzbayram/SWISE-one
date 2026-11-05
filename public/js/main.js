@@ -14,6 +14,7 @@ import { pageHome } from './pages/home.js';
 import { pageEffort } from './pages/effort.js';
 import { pageBudget } from './pages/budget.js';
 import { pageOffers } from './pages/offers.js';
+import { pageAccounting } from './pages/accounting.js';
 
 // perm: menüde görünme ve erişim koşulu; allow: parametreli erişim (örn. kişinin kendi personel kartı)
 const ROUTES = [
@@ -24,6 +25,7 @@ const ROUTES = [
   { id: 'teklifler', title: 'Teklifler', perm: () => can('offers.view'), render: pageOffers },
   { id: 'onaylar', title: 'Onaylar', perm: () => can('activities.approve') || can('expenses.approve') || can('offers.approve') || can('period.close') || can('period.reopen'), render: pageApprovals },
   { id: 'rapor', title: 'Raporlar', perm: () => can('reports.view') || can('effort_report.view'), render: pageReport },
+  { id: 'muhasebe', title: 'Muhasebe', perm: () => can('accounting.view') || can('salary.view'), render: pageAccounting },
   { id: 'butce', title: 'Bütçe', perm: () => can('budget.view'), render: pageBudget },
   { id: 'musteriler', title: 'Müşteriler', perm: () => can('customers.view'), render: pageCustomers },
   { id: 'personel', title: 'Personel', perm: () => can('personnel.view'), allow: (p) => Number(p) === state.user.id, render: pagePersonnel },
@@ -37,14 +39,14 @@ const permitted = (r, param) => !r.perm || r.perm() || (r.allow && r.allow(param
 function route() {
   if (!state.user) return;
   // #/sayfa veya #/sayfa/parametre (örn. #/musteriler/3)
-  const [id, param] = location.hash.replace(/^#\/?/, '').split('/');
+  const [id, param, sub] = location.hash.replace(/^#\/?/, '').split('/');
   const target = ROUTES.find((r) => r.id === id);
   const current = target && permitted(target, param) ? target : ROUTES[0];
   const navActive = current.id === 'roller' ? 'personel' : current.id;
   $('#nav').innerHTML = ROUTES.filter((r) => r.nav !== false && (!r.perm || r.perm()))
     .map((r) => `<a href="#/${r.id}" class="${r.id === navActive ? 'active' : ''}">${r.title}</a>`).join('');
   document.title = `${current.title} · SWISE One`;
-  current.render(current === target ? param : undefined);
+  current.render(current === target ? param : undefined, current === target ? sub : undefined);
 }
 
 async function boot() {

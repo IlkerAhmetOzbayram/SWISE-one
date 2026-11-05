@@ -1,6 +1,7 @@
 // Teklif PDF'i (A4, Türkçe/İngilizce). Girdi: dondurulmuş teklif görüntüsü (snapshot).
 const path = require('path');
 const PDFDocument = require('pdfkit');
+const { isoDay } = require('../../lib/workdays');
 
 const FONT = require.resolve('dejavu-fonts-ttf/ttf/DejaVuSans.ttf');
 const FONT_BOLD = require.resolve('dejavu-fonts-ttf/ttf/DejaVuSans-Bold.ttf');
@@ -73,7 +74,7 @@ function buildOfferPdf(o, { draft = false } = {}) {
     [L.number, o.number],
     [L.revision, String(o.revision)],
     [L.date, fmtDate(o.language, o.offer_date)],
-    [L.valid, fmtDate(o.language, validUntil.toISOString().slice(0, 10))],
+    [L.valid, fmtDate(o.language, isoDay(validUntil))],
   ];
   let my = 56;
   for (const [k, v] of meta) {

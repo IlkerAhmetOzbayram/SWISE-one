@@ -51,6 +51,7 @@ npm run parola-sifirla -- <kullanıcı adı>
 | `TRUST_PROXY` | — | Uygulama bir ters vekil (nginx, yük dengeleyici) arkasındaysa `1` |
 | `UPLOAD_DIR` | `uploads/` | Teklif PDF'leri ve imzalı dosyalar |
 | `NO_LOGIN` | — | `1`: girişsiz geliştirme modu (`npm run gelistirme` ile aynı); canlıda yok sayılır |
+| `RATES_AUTO` | — | `0`: TCMB kurlarının otomatik çekilmesini kapatır |
 
 ## Veri ve yedekler
 
@@ -121,6 +122,19 @@ kapatma yetkileri ayrı ayrı verilir; kayıt kapsamı *kendi*, *sorumlu olduğu
 - Revizyon açıldığında teklif yeniden taslak olur; önceki sürümün PDF'i ve imzalı dosyası arşivde değişmeden kalır.
 - Mail gönderimi elle yapılır: "Mail taslağı" alıcıları ve metni doldurulmuş bir taslak açar; dosya elle eklenir.
 - Dosyalar `uploads/` klasöründe tutulur (`UPLOAD_DIR`) ve günlük yedekte `backups/uploads/` altına kopyalanır.
+
+## Muhasebe
+
+- Kurlar TCMB'den (today.xml, gerekirse son 7 günün arşivi) açılışta ve 6 saatte bir çekilir; Tanımlar → Kurlar'dan elle de girilebilir.
+  Bir tarih için o güne ya da öncesindeki en yakın kur kullanılır.
+- Giden fatura aktivitelerden oluşturulur: proje ve ücrete göre "gün" kalemleri (8 saat = 1 gün) ve onaylı yansıtılabilir masraflar.
+  Faturalanan kayıtlar faturaya bağlanır; taslak silinir ya da fatura iptal edilirse yeniden faturalanabilir.
+- Fatura kesilirken resmi numara elle girilir (uygulama e-fatura kesmez). Stopaj yalnızca hizmet kalemlerine uygulanır.
+- Tahsilat/ödeme faturaya bağlanır; hesap ile fatura dövizi farklıysa fatura dövizindeki karşılığı da girilir. Kalan tutar aşılamaz.
+- Personel cari: bordro tutarları muhasebeciden girilir; net maaş personele, SGK ve vergiler devlete borç yazılır.
+  Maaş ödemesi, avans ve masraf iadesi bu bakiyeden düşer. Maaş bilgileri yalnızca maaş yetkisi olanlara görünür.
+- Gelir–gider tablosu tahakkuk esaslıdır (TL, fatura kuru); bütçe kategori bazında aylık plan ve efor planından gelir tahmini içerir.
+- Muhasebeci için aylık Excel: faturalar, kasa/banka hareketleri ve bordro sayfaları.
 
 ## Personel ve KVKK
 

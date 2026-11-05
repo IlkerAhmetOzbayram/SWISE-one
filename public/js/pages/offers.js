@@ -1,5 +1,5 @@
 // Teklifler: liste (#/teklifler), yeni (#/teklifler/yeni), ayrıntı/düzenleme (#/teklifler/:id)
-import { state, can, $, main, api, toast, esc, money, fmtDate, fmtDateTime, opt, companyLabel, currencyOptions, CURRENCY_LABELS } from '../core.js';
+import { state, can, $, main, api, toast, esc, money, fmtDate, fmtDateTime, opt, today, companyLabel, currencyOptions, CURRENCY_LABELS } from '../core.js';
 
 export const OFFER_STATUS = {
   draft: ['Taslak', 'off'],
@@ -155,7 +155,7 @@ async function pageOffer(id) {
     if (o.contact) f('contact_id').innerHTML = `<option value="${o.contact.id}">${esc(o.contact.full_name)}</option>`;
     if (editable) loadDefaults(false);
   } else {
-    f('offer_date').value = new Date().toISOString().slice(0, 10);
+    f('offer_date').value = today();
     f('valid_days').value = 30;
     try {
       const t = (await api('GET', '/api/offers/defaults?language=tr')).templates;

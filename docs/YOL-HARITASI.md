@@ -41,7 +41,7 @@ Her faz ayrı bir dalda (`faz-N/...`) geliştirilir, test edilir, onaylandıktan
 | 2 | Aktivite ve raporlama: ana sayfa, efor ekranı (günlük/haftalık çizelge/aylık takvim), müşteri efor raporu + Excel, tatil listesi, aylık müşteri planı ve bütçe tahmini | ✅ Tamamlandı (04.11.2026) |
 | 3 | Personel, yönetim, yetkilendirme: personel kartı, maaş geçmişi, hassas bilgiler, 4 hazır rol + özel rol, yetki matrisi, masraf onayı, haftalık efor onayı, ay kapanışı, KVKK | ✅ Tamamlandı (05.11.2026) |
 | 4 | Teklif: TR/EN teklif, kalemler ve ödeme planı, iç onay, PDF dondurma (SHA-256), imzalı dosya yükleme, mail taslağı, durum takibi, sürümlü arşiv | ✅ Tamamlandı (05.11.2026) |
-| 5 | Muhasebe: gelir/gider hareketleri, gelen/giden fatura, cari bakiye, personel cari (maaş, SGK, avans), aylık bütçe raporu | ⏳ |
+| 5 | Muhasebe: gelir/gider hareketleri, gelen/giden fatura, cari bakiye, personel cari (maaş, SGK, avans), aylık bütçe raporu | ✅ Tamamlandı — onay bekliyor |
 | 6 | Entegrasyonlar: Microsoft 365 mail, e-imza servisi, e-fatura entegratörü, banka hareketleri, bulut kurulumu | ⏳ |
 
 Fazların sırası bağımlılıklara göre belirlendi: teklif ve muhasebe müşteri kaydına,
@@ -90,6 +90,14 @@ maaş/cari gibi hassas veriler ise yetkilendirmeye dayanır.
 - Personel cari: maaş, SGK, avans, kesinti (bordro tutarları muhasebeciden)
 - Aylık bütçe raporu (plan–gerçekleşen)
 - Not: resmi e-fatura/e-arşiv kesilmez; Faz 6'da entegratörle bağlanır
+
+Faz 5 kararları (05.11.2026):
+- Kurlar TCMB'den otomatik çekilir (açılışta ve 6 saatte bir); giden faturada döviz alış, gelen faturada döviz satış önerilir, elle değiştirilebilir
+- Giden fatura aktivitelerden (proje ve ücrete göre "gün" kalemleri) ve onaylı yansıtılabilir masraflardan oluşturulur; resmi numara fatura kesilirken elle girilir
+- Stopaj yalnızca hizmet kalemlerine uygulanır; KDV muafiyeti, stopaj ve vade şirket kartından gelir
+- Personel cari: net maaş tahakkuku, maaş ödemesi, avans (maaştan mahsup), masraf iadesi; SGK ve vergi devlete borç olarak izlenir
+- Bütçe: gelir/gider kategorisi bazında aylık plan, gerçekleşenle karşılaştırma ve Faz 2 efor planından gelir tahmini
+- Gelen faturaya PDF/XML eki yüklenir
 
 ### Faz 6 – Entegrasyonlar
 Microsoft 365 (mail, takvim), e-imza servisi, e-fatura/e-arşiv entegratörü, banka hareketleri, bulut sunucu kurulumu.

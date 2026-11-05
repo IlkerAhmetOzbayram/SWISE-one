@@ -3,6 +3,7 @@ const config = require('./src/config');
 const { createApp } = require('./src/app');
 const { db } = require('./src/db');
 const { scheduleDailyBackup } = require('./src/lib/backup');
+const { scheduleRates } = require('./src/modules/accounting/rates');
 
 createApp().listen(config.port, () => {
   console.log(`SWISE One çalışıyor: http://localhost:${config.port}`);
@@ -12,3 +13,4 @@ createApp().listen(config.port, () => {
 });
 
 scheduleDailyBackup(db, config);
+scheduleRates();

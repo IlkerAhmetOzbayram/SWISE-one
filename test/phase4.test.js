@@ -61,6 +61,7 @@ test('teklif oluşturulur: yıllık sıra numarası, şirketten para birimi ve v
   assert.equal(d.currency, 'TRY');
   assert.equal(d.payment_days, 30);
   assert.match(d.intro, /Talebiniz doğrultusunda/);
+  assert.equal(d.valid_until, '2026-12-05');   // 05.11 + 30 gün (yerel tarih; saat dilimi kayması olmamalı)
   assert.deepEqual(d.totals, { subtotal: 205000, vat: 41000, total: 246000, vat_exempt: false, payments_total: 246000, payment_mismatch: false });
 
   const en = (await admin('POST', '/api/offers', { company_id: ids.glCo, language: 'en', title: 'EU rollout', offer_date: '2026-11-06', items: [item({ unit: 'day', unit_price: 800 })] })).data;

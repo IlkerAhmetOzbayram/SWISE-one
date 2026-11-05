@@ -16,7 +16,7 @@ async function startServer() {
 // Her istemci kendi oturum çerezini tutar (ayrı kullanıcı gibi davranır)
 function client(base) {
   let cookie = '';
-  return async function call(method, url, body, headers = {}) {
+  async function call(method, url, body, headers = {}) {
     const res = await fetch(base + url, {
       method,
       headers: { ...(body ? { 'Content-Type': 'application/json' } : {}), cookie, ...headers },
@@ -27,7 +27,10 @@ function client(base) {
     const type = res.headers.get('content-type') || '';
     const data = type.includes('json') ? await res.json() : Buffer.from(await res.arrayBuffer());
     return { status: res.status, data, headers: res.headers };
-  };
+  }
+  // Dosya yükleme gibi ham isteklerde aynı oturumu kullanmak için
+  Object.defineProperty(call, 'cookie', { get: () => cookie });
+  return call;
 }
 
 module.exports = { startServer, client };
