@@ -15,7 +15,10 @@ npm install
 npm start
 ```
 
-Tarayıcıda http://localhost:3000 adresini açın. İlk açılışta şirket adı ve yönetici hesabı oluşturulur.
+Tarayıcıda http://localhost:3000 adresini açın. İlk açılışta şirket adı ve yönetici hesabı oluşturulur
+(canlıda güvenlik için web'den değil, `npm run yonetici-olustur` / `sudo swise-one yonetici-olustur` komutuyla).
+
+Bulut sunucuya kurulum, güncelleme, yedek ve geri yükleme: [docs/KURULUM.md](docs/KURULUM.md).
 
 Geliştirme sırasında girişsiz çalışmak için:
 
@@ -39,6 +42,13 @@ Parolası unutulan bir hesabı sunucuda sıfırlamak için (yeni parola gizli ol
 npm run parola-sifirla -- <kullanıcı adı>
 ```
 
+Yönetici hesabı oluşturmak ya da var olan kullanıcıyı Yönetici yapmak için (geliştirmede oluşan "Yerel Yönetici"
+hesabını kayıtlarıyla devralmayı önerir):
+
+```bash
+npm run yonetici-olustur -- <kullanıcı adı> "Ad Soyad"
+```
+
 ### Ortam değişkenleri
 
 | Değişken | Varsayılan | Açıklama |
@@ -51,6 +61,8 @@ npm run parola-sifirla -- <kullanıcı adı>
 | `TRUST_PROXY` | — | Uygulama bir ters vekil (nginx, yük dengeleyici) arkasındaysa `1` |
 | `UPLOAD_DIR` | `uploads/` | Teklif PDF'leri ve imzalı dosyalar |
 | `NO_LOGIN` | — | `1`: girişsiz geliştirme modu (`npm run gelistirme` ile aynı); canlıda yok sayılır |
+| `HOST` | — | Dinlenecek adres; bulutta nginx arkasında `127.0.0.1` |
+| `PUBLIC_URL` | — | Dış adres (örn. `https://one.swise.com.tr`); davet bağlantılarında kullanılır, canlıda zorunlu |
 | `RATES_AUTO` | — | `0`: TCMB kurlarının otomatik çekilmesini kapatır |
 
 ## Veri ve yedekler
@@ -72,6 +84,11 @@ alanlar eski → yeni değerleriyle saklanır. Yönetici **İşlem Kaydı** ekra
 - Aynı kullanıcı adı için 15 dakikada 5 hatalı denemeden sonra giriş geçici olarak kilitlenir.
 - Başka sitelerden gelen değişiklik istekleri reddedilir; güvenlik başlıkları (CSP, X-Frame-Options vb.) gönderilir.
 - Parola değişince/sıfırlanınca kullanıcının diğer oturumları kapatılır.
+- Yeni personel parolasız oluşturulabilir: tek kullanımlık davet bağlantısı (7 gün) ile kendi parolasını belirler.
+  Parola sıfırlama bağlantısı 24 saat geçerlidir; yenisi oluşturulunca eskisi geçersiz olur. Bağlantı anahtarı
+  veritabanında yalnızca SHA-256 özetiyle tutulur. Yönetici hesabının parolasına/bağlantısına yalnızca bir Yönetici dokunabilir.
+- Canlıda (`NODE_ENV=production`) ilk yönetici web'den oluşturulamaz; adrese ilk ulaşan kişi yönetici olamaz.
+- `/api/health` giriş gerektirmeyen sağlık kontrolüdür (bilgi içermez).
 
 ## Kod yapısı
 
@@ -87,8 +104,10 @@ public/
   js/core.js              Arayüz ortak yardımcıları
   js/pages/<sayfa>.js     Her ekran ayrı dosyada
   js/components/          Ortak arayüz bileşenleri
+scripts/                  Komut satırı: yönetici oluşturma, parola sıfırlama, anlık yedek
+deploy/                   Bulut kurulum betiği, servis/nginx ayarları, swise-one yönetim komutu
 test/                     Otomatik testler (node:test)
-docs/                     Yol haritası ve kararlar
+docs/                     Yol haritası, kararlar ve kurulum rehberi
 ```
 
 ## Roller ve yetkiler

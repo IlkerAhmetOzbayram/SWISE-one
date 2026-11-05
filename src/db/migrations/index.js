@@ -9,4 +9,5 @@ module.exports = [
   require('./006-yetki-personel-onay'),
   require('./007-teklif'),
   require('./008-muhasebe'),
+  require('./009-giris-baglantisi'),
 ];

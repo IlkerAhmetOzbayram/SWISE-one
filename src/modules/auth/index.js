@@ -5,6 +5,8 @@ const { HttpError, bad } = require('../../lib/http');
 const { str } = require('../../lib/validate');
 const { hashPassword, verifyPassword, startSession, clearSessionCookie, getToken, auth } = require('../../lib/auth');
 const { createLoginLimiter } = require('../../lib/security');
+const { findPasswordLink, markUsed } = require('../../lib/password-links');
+const config = require('../../config');
 const audit = require('../../lib/audit');
 
 const router = express.Router();
@@ -13,11 +15,14 @@ const limiter = createLoginLimiter();
 const MIN_PASSWORD = 8;
 const checkPassword = (pw) => { if (pw.length < MIN_PASSWORD) bad(`Parola en az ${MIN_PASSWORD} karakter olmalı`); return pw; };
 
+// Canlıda ilk yönetici web'den oluşturulamaz (adrese ilk ulaşan kişi yönetici olmasın);
+// sunucuda "sudo swise-one yonetici-olustur" (geliştirmede "npm run yonetici-olustur") kullanılır.
 router.get('/api/setup', (req, res) => {
-  res.json({ needsSetup: one('SELECT COUNT(*) n FROM users').n === 0 });
+  res.json({ needsSetup: one('SELECT COUNT(*) n FROM users').n === 0, webSetup: !config.production });
 });
 
 router.post('/api/setup', (req, res) => {
+  if (config.production) throw new HttpError(403, 'İlk yönetici sunucuda "sudo swise-one yonetici-olustur" komutuyla oluşturulur');
   const b = req.body;
   const userId = tx(() => {
     if (one('SELECT COUNT(*) n FROM users').n > 0) bad('Kurulum zaten tamamlanmış');
@@ -49,6 +54,31 @@ router.post('/api/login', (req, res) => {
   run('DELETE FROM sessions WHERE expires_at < ?', Date.now());
   startSession(res, u.id);
   audit.record(req, 'login', 'users', u.id, {}, u.id);
+  res.json({ ok: true });
+});
+
+// Davet / parola sıfırlama bağlantısı: kişi kendi parolasını belirler ve giriş yapar
+router.get('/api/password-link/:token', (req, res) => {
+  const link = findPasswordLink(req.params.token);
+  if (!link) throw new HttpError(404, 'Bağlantı geçersiz veya süresi dolmuş. Yöneticinizden yeni bağlantı isteyin.');
+  res.json({ purpose: link.purpose, username: link.username, full_name: link.full_name });
+});
+
+router.post('/api/password-link/:token', (req, res) => {
+  limiter.check(req, 'parola-baglantisi');
+  const link = findPasswordLink(req.params.token);
+  if (!link) {
+    limiter.fail(req, 'parola-baglantisi');
+    throw new HttpError(404, 'Bağlantı geçersiz veya süresi dolmuş. Yöneticinizden yeni bağlantı isteyin.');
+  }
+  const hash = hashPassword(checkPassword(str(req.body.password, 'Parola')));
+  tx(() => {
+    run('UPDATE users SET password_hash = ? WHERE id = ?', hash, link.user_id);
+    run('DELETE FROM sessions WHERE user_id = ?', link.user_id);
+    markUsed(link.id);
+    audit.record(req, link.purpose === 'invite' ? 'invite_accepted' : 'password_reset', 'users', link.user_id, { kaynak: 'bağlantı' }, link.user_id);
+  });
+  startSession(res, link.user_id);
   res.json({ ok: true });
 });
 

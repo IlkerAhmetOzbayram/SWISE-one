@@ -8,7 +8,8 @@
     "start": "node --no-warnings server.js",
     "gelistirme": "node --no-warnings server.js --girissiz",
     "test": "node --no-warnings --test \"test/*.test.js\"",
-    "parola-sifirla": "node --no-warnings scripts/parola-sifirla.js"
+    "parola-sifirla": "node --no-warnings scripts/parola-sifirla.js",
+    "yonetici-olustur": "node --no-warnings scripts/yonetici-olustur.js"
   },
   "engines": {
     "node": ">=24"

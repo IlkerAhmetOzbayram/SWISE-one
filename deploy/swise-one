@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+# SWISE One sunucu yönetim komutu. Kurulumda /usr/local/bin/swise-one olarak kopyalanır.
+# Kullanım: sudo swise-one <komut>   (komut listesi için: sudo swise-one yardim)
+set -euo pipefail
+
+APP_DIR=/opt/swise-one
+ENV_FILE=/etc/swise-one.env
+SERVICE=swise-one
+RCLONE_CONF=/etc/swise-one-rclone.conf
+REMOTE=swise-yedek
+
+[[ $EUID -eq 0 ]] || { echo "Bu komut yönetici olarak çalışır: sudo swise-one $*"; exit 1; }
+set -a; . "$ENV_FILE"; set +a
+
+# Uygulama kullanıcısıyla, ortam değişkenleri yüklenmiş olarak çalıştırır
+as_app() { (cd "$APP_DIR" && sudo -u swise --preserve-env=NODE_ENV,DB_PATH,BACKUP_DIR,UPLOAD_DIR,PUBLIC_URL,BACKUP_KEEP,RATES_AUTO "$@"); }
+
+health() {
+  for _ in $(seq 1 20); do
+    curl -fsS "http://127.0.0.1:${PORT:-3000}/api/health" >/dev/null 2>&1 && return 0
+    sleep 1
+  done
+  return 1
+}
+
+# Güncelleme ve geri yükleme öncesi yedekler ayrı klasörde; son 10 tanesi saklanır
+snapshot() {
+  local dir="$BACKUP_DIR/elle" file
+  file="$dir/$1-$(date +%Y%m%d-%H%M%S).db"
+  mkdir -p "$dir" && chown swise:swise "$dir"
+  as_app node --no-warnings scripts/anlik-yedek.js "$file" >&2
+  ls -1t "$dir"/*.db 2>/dev/null | tail -n +11 | xargs -r rm -f
+  echo "$file"
+}
+
+cmd_durum() {
+  systemctl --no-pager --lines=0 status "$SERVICE" || true
+  echo
+  if health; then echo "Sağlık kontrolü: çalışıyor ($PUBLIC_URL)"; else echo "Sağlık kontrolü: YANIT YOK"; fi
+  echo "Sürüm: $(git -C "$APP_DIR" log -1 --format='%h %s (%cd)' --date=short)"
+  echo; echo "Son günlük yedekler:"; ls -1t "$BACKUP_DIR"/swise-*.db 2>/dev/null | head -3 | sed 's/^/  /'
+  echo; df -h "$(dirname "$DB_PATH")" | tail -1 | awk '{print "Disk: " $3 " / " $2 " kullanılıyor (" $5 ")"}'
+}
+
+cmd_guncelle() {
+  local before backup
+  before=$(git -C "$APP_DIR" rev-parse HEAD)
+  sudo -u swise git -C "$APP_DIR" fetch --quiet origin main
+  if [[ $(sudo -u swise git -C "$APP_DIR" rev-parse origin/main) == "$before" ]]; then echo "Zaten güncel."; return; fi
+  echo "Yeni değişiklikler:"; sudo -u swise git -C "$APP_DIR" log --oneline "$before..origin/main" | sed 's/^/  /'
+  backup=$(snapshot guncelleme-oncesi)
+  sudo -u swise git -C "$APP_DIR" merge --ff-only --quiet origin/main
+  as_app npm ci --omit=dev --no-audit --no-fund --silent
+  systemctl restart "$SERVICE"
+  if health; then
+    echo "Güncellendi: $(git -C "$APP_DIR" log -1 --format='%h %s')"
+    return
+  fi
+  echo "HATA: Yeni sürüm açılmadı. Önceki sürüme ve güncelleme öncesi yedeğe dönülüyor..."
+  journalctl -u "$SERVICE" -n 30 --no-pager || true
+  systemctl stop "$SERVICE"
+  sudo -u swise git -C "$APP_DIR" reset --hard --quiet "$before"
+  as_app npm ci --omit=dev --no-audit --no-fund --silent
+  restore_file "$backup"
+  systemctl start "$SERVICE"
+  health && echo "Önceki sürüm çalışıyor." || echo "Önceki sürüm de açılmadı; 'sudo swise-one log' çıktısını paylaşın."
+  exit 1
+}
+
+restore_file() {
+  local file=$1
+  cp "$file" "$DB_PATH.yeni"
+  rm -f "$DB_PATH-wal" "$DB_PATH-shm"
+  mv "$DB_PATH.yeni" "$DB_PATH"
+  chown swise:swise "$DB_PATH"
+}
+
+cmd_geri_yukle() {
+  local file=${1:-}
+  [[ -f $file ]] || { echo "Kullanım: sudo swise-one geri-yukle <yedek dosyası>"; ls -1t "$BACKUP_DIR"/swise-*.db "$BACKUP_DIR"/elle/*.db 2>/dev/null | head -10 | sed 's/^/  /'; exit 1; }
+  local current
+  current=$(snapshot geri-yukleme-oncesi)
+  echo "Şu anki veritabanı saklandı: $current"
+  read -r -p "\"$file\" geri yüklenecek; bu yedekten sonraki kayıtlar görünmez olur. Devam? [e/H] " ok
+  [[ $ok =~ ^[eE] ]] || { echo "Vazgeçildi."; return; }
+  systemctl stop "$SERVICE"
+  restore_file "$file"
+  systemctl start "$SERVICE"
+  health && echo "Geri yüklendi ve uygulama çalışıyor." || { echo "Uygulama açılmadı; 'sudo swise-one log' çıktısını paylaşın."; exit 1; }
+}
+
+# Günlük yedekler ve yüklenen dosyalar sunucu dışına (rclone ile şifreli) kopyalanır
+cmd_yedek_disari() {
+  if [[ ! -f $RCLONE_CONF ]] || ! rclone --config "$RCLONE_CONF" listremotes | grep -q "^$REMOTE:"; then
+    echo "Sunucu dışı yedek ayarlı değil (docs/KURULUM.md → Sunucu dışı yedek)."; exit 1
+  fi
+  rclone --config "$RCLONE_CONF" copy "$BACKUP_DIR" "$REMOTE:" --max-age 3d --exclude 'elle/**'
+  rclone --config "$RCLONE_CONF" copy "$BACKUP_DIR/uploads" "$REMOTE:uploads"
+  echo "Sunucu dışı yedek tamam: $(date '+%d.%m.%Y %H:%M')"
+}
+
+cmd_yardim() {
+  cat <<'EOF'
+SWISE One sunucu komutları (sudo ile):
+  swise-one durum                       Servis, sürüm, son yedekler ve disk
+  swise-one log [satır]                 Uygulama kayıtları (varsayılan 100 satır)
+  swise-one guncelle                    GitHub main dalından günceller; açılmazsa otomatik geri döner
+  swise-one yonetici-olustur <kullanıcı> "<Ad Soyad>"
+  swise-one parola-sifirla <kullanıcı>
+  swise-one yedek                       Anlık yedek alır (yedek/elle klasörüne)
+  swise-one geri-yukle <dosya>          Yedekten geri yükler (öncesinde anlık yedek alınır)
+  swise-one yedek-disari                Yedekleri sunucu dışına kopyalar (her gece otomatik)
+EOF
+}
+
+case "${1:-yardim}" in
+  durum) cmd_durum ;;
+  log) journalctl -u "$SERVICE" -n "${2:-100}" --no-pager ;;
+  guncelle) cmd_guncelle ;;
+  yonetici-olustur) shift; as_app node --no-warnings scripts/yonetici-olustur.js "$@" ;;
+  parola-sifirla) shift; as_app node --no-warnings scripts/parola-sifirla.js "$@" ;;
+  yedek) snapshot elle ;;
+  geri-yukle) cmd_geri_yukle "${2:-}" ;;
+  yedek-disari) cmd_yedek_disari ;;
+  *) cmd_yardim ;;
+esac

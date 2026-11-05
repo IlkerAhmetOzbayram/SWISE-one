@@ -7,6 +7,7 @@ const ACTIONS = {
   login: 'Giriş', login_failed: 'Hatalı giriş', password_change: 'Parola değişikliği',
   password_reset: 'Parola sıfırlama', backup_download: 'Yedek indirme', approve: 'Onay', reject: 'Ret / geri gönderme',
   submit: 'Onaya gönderme', withdraw: 'Geri çekme', reopen: 'Yeniden açma', close: 'Kapatma', sensitive_view: 'Hassas bilgi görüntüleme',
+  invite: 'Davet bağlantısı', invite_accepted: 'Davet kabulü', password_link: 'Parola sıfırlama bağlantısı', admin_grant: 'Yönetici yetkisi (komut)',
   anonymize: 'Anonimleştirme', logout_all: 'Oturumları kapatma', sign: 'İmzalı dosya yükleme', send: 'Gönderim',
   accept: 'Kabul', decline: 'Müşteri reddi', revise: 'Revizyon', issue: 'Fatura kesme', cancel: 'İptal', attach: 'Ek yükleme',
 };

@@ -1,0 +1,9 @@
+# Günlük yedeklerin sunucu dışına kopyalanması (swise-one-yedek.timer tetikler)
+[Unit]
+Description=SWISE One sunucu dışı yedek
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/swise-one yedek-disari
